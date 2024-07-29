@@ -7,5 +7,5 @@ build-job:
   tags:
     - deploy
   script:
-    - mkdir /usr/textdir
+    - ssh -T git@gitlab.com "mkdir /usr/testdir"
 
