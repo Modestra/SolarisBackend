@@ -7,5 +7,5 @@ build-job:
   tags:
     - deploy
   script:
-    - mkdir /usr/textdir
+    - sudo mkdir /usr/textdir
 
