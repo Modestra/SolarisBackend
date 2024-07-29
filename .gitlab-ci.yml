@@ -4,8 +4,8 @@ stages:
 build-job:       
   stage: build
   image: ubuntu:latest
+  tags:
+    - deploy
   script:
     - mkdir /usr/textdir
-    - apt install git
-    - git clone git@gitlab.com:backend6130626/bushtreebackend.git
 
