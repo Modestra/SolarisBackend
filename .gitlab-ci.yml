@@ -4,7 +4,8 @@ stages:
 build-job:       
   stage: build
   image: ubuntu:latest
+  tags:
+    - deploy
   script:
-    - mkdir /usr/textdir
-    - git clone git@gitlab.com:backend6130626/bushtreebackend.git
+    - echo Hello World
 
