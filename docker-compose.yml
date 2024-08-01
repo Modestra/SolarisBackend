@@ -21,7 +21,6 @@ services:
     env_file: ./bushtree/.env
     ports:
       - "5532:5432"
-      - "5532:5432"
     networks:
       - backend
     volumes:
@@ -32,7 +31,6 @@ services:
       PGADMIN_DEFAULT_EMAIL: umbrellamixmail@gmail.com
       PGADMIN_DEFAULT_PASSWORD: terrarik22
     ports:
-      - "5533:5433"
       - "5533:5433"
     volumes:
       - pgadmin:/var/lib/pgadmin
