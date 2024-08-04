@@ -16,7 +16,7 @@ services:
     depends_on:
       - postgress
   postgress:
-    container_name: bush_postgres_db
+    container_name: postgres_db
     image: postgres
     env_file: ./bushtree/.env
     ports:
