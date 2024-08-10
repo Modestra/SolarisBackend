@@ -5,6 +5,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_SITE_URL = os.getenv('DEFAULT_SITE_URL', default='localhost:8000')
+SETTINGS_PATH = os.path.dirname(os.path.dirname(__file__))
 DATABASE = os.getenv('DATABASE', default='sqlite')
 
 RUN_TYPE = os.getenv('RUN_TYPE', default='LOCAL')
@@ -95,7 +96,7 @@ ROOT_URLCONF = 'solaris.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -107,6 +108,10 @@ TEMPLATES = [
         },
     },
 ]
+
+TEMPLATE_DIRS = (
+    os.path.join(SETTINGS_PATH, 'templates'),
+)
 
 WSGI_APPLICATION = 'solaris.wsgi.application'
 

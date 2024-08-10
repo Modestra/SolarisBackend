@@ -25,3 +25,10 @@ class Pupil(models.Model):
     name = models.TextField() #Имя
     surname = models.TextField() #Фамилия
     teacher_id = models.UUIDField(default= uuid.uuid4) #id, привязывающая к учителю. У учителя значение равно None
+
+class FeedbackForm(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.TextField()
+    email = models.CharField(max_length=100)
+    phone = models.CharField(max_length=25)
+    description = models.TextField()

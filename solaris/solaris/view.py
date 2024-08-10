@@ -2,7 +2,8 @@ from rest_framework import (status, viewsets)
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
-from solaris.serializers import *
+from solaris.serializer import *
+from solaris.mixin import *
 
 class RegisterApiView(APIView):
     """Регистрация ученика со стороны администратора"""
@@ -31,3 +32,15 @@ class LoginApiView(APIView):
             return Response(serializers.data, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Некорректно введены данные"}, status=status.HTTP_403_FORBIDDEN)
+
+class FeedbackFormApiView(viewsets.ViewSet):
+    
+    def list(self, request, *args, **kwargs):
+        return Response({"test": "test"}, status=status.HTTP_200_OK)
+    def post(self, request):
+        serializers = FeedbackSerializer(data=request.data)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response({"error": "Некорректно введены данные"}, status=status.HTTP_400_BAD_REQUEST)
+    
