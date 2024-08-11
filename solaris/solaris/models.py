@@ -14,8 +14,7 @@ class Users(models.Model):
     user_id = models.UUIDField(default=uuid.uuid4)
     login = models.TextField()
     password = models.TextField()
-    category = models.ForeignKey(Category, to_field="category_id", on_delete=models.SET_DEFAULT, default=2)   
-    date_seccion = models.DateField(null=None)
+    category = models.ForeignKey(Category, to_field="category_id", on_delete=models.SET_DEFAULT, default=2) 
     
     def __str__(self):
         return self.name

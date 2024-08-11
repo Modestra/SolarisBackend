@@ -23,8 +23,10 @@ from rest_framework.routers import DefaultRouter
 router = routers.DefaultRouter()
 
 router.register(r'createform', FeedbackFormApiView, basename="form")
+router.register(r'register', RegisterApiView, basename="register")
+router.register(r'login', LoginApiView, basename='login')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls))
+    path('api/v1/', include(router.urls))
 ]
