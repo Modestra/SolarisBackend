@@ -7,7 +7,6 @@ from solaris.mixin import *
 
 class RegisterApiView(viewsets.ModelViewSet):
     """Регистрация ученика со стороны администратора"""
-    queryset = Users.objects.create()
     def post(self, request):
         serializers = AdminUserSerializer(data=request.data)
         if serializers.is_valid():
