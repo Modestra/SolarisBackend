@@ -50,8 +50,3 @@ jobs:
       - name: Run Tests
         run: |
           python manage.py test
-  create_migrations:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: solaris
