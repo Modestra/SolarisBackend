@@ -26,6 +26,7 @@ jobs:
           script: |
             cd ${{ secrets.DIRECTORY_ROOT }}
             ls
+            git pull origin deploy
             bash ./scripts/docker-install.sh
 
   build:
