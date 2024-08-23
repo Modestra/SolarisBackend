@@ -1,7 +1,7 @@
 #!/bin/bash/
 sudo docker exec -it backend /bin/bash
-sudo python manage.py migrate
-sudo export DJANGO_SUPERUSER_USERNAME=Modestra
-sudo export DJANGO_SUPERUSER_PASSWORD=Terrarik22
-sudo export DJANGO_SUPERUSER_EMAIL="testuser@example.com"
-sudo python manage.py createsuperuser --noinput
+python manage.py migrate
+export DJANGO_SUPERUSER_USERNAME=Modestra
+export DJANGO_SUPERUSER_PASSWORD=Terrarik22
+export DJANGO_SUPERUSER_EMAIL="testuser@example.com"
+python manage.py createsuperuser --noinput
