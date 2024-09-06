@@ -6,7 +6,7 @@ class Category(models.Model):
     category_id = models.AutoField(primary_key=True)
     category = models.CharField(max_length=15)
 
-class UserData(models.Model):
+class User(models.Model):
     """Основная форма для пользователя"""
     id = models.AutoField(primary_key=True)
     user_id = models.UUIDField(default=uuid.uuid4)

@@ -23,7 +23,7 @@ from rest_framework.routers import DefaultRouter
 router = routers.DefaultRouter()
 
 router.register(r'forms', FeedbackFormApiView)
-router.register(r'auth', AuthApiViewSet, basename="users")
+router.register(r'auth', AuthApiViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

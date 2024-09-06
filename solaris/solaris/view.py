@@ -3,10 +3,9 @@ from rest_framework import (status, viewsets)
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
-from django.contrib.auth.models import User
 from solaris.serializer import *
 from solaris.mixin import *
-from solaris.models import FeedbackForm
+from solaris.models import *
 
 class AuthApiViewSet(viewsets.ModelViewSet):
     """Авторизация пользователей администратором"""
@@ -22,6 +21,7 @@ class AuthApiViewSet(viewsets.ModelViewSet):
     
 class FeedbackFormApiView(viewsets.ModelViewSet):
     """Логика создания feedback формы"""
+
     queryset = FeedbackForm.objects.all()
     serializer_class = FeedbackSerializer
     
