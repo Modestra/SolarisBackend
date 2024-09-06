@@ -6,9 +6,7 @@ class Category(models.Model):
     category_id = models.AutoField(primary_key=True)
     category = models.CharField(max_length=15)
 
-    def __str__(self):
-        return self.name
-class Users(models.Model):
+class UserData(models.Model):
     """Основная форма для пользователя"""
     id = models.AutoField(primary_key=True)
     user_id = models.UUIDField(default=uuid.uuid4)
@@ -17,10 +15,8 @@ class Users(models.Model):
     category = models.CharField(max_length=25, default="Ученик")
     date_seccion = models.CharField(max_length=25)
     
-    def __str__(self):
-        return self.name
-    
 class Pupil(models.Model):
+    """Основная модель для создания школьника. Создается учителем или администратором"""
     id = models.AutoField(primary_key=True) # id
     name = models.TextField() #Имя
     surname = models.TextField() #Фамилия

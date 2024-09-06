@@ -1,19 +1,16 @@
-from rest_framework import serializers
+from rest_framework import (serializers, viewsets)
+from rest_framework.decorators import action
+from django.contrib.auth.models import User
 from solaris.models import *
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(viewsets.ModelViewSet):
     class Meta:
-        model = Users
-        field = ['login', 'register']
-
-class AdminUserSerializer(serializers.ModelSerializer):
-    """Регистрация пользователя администратором"""
-    class Meta:
-        model = Users
-        field = ['login', 'register']
+        model = User
+        fields = '__all__'
 
 class FeedbackSerializer(serializers.ModelSerializer):
     """Форма заполнения для отзыва и предложений"""
     class Meta:
         model = FeedbackForm
+        fields = '__all__'
         field = ['name', 'phone', 'email', 'description']

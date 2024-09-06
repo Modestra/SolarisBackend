@@ -22,11 +22,14 @@ from rest_framework.routers import DefaultRouter
 
 router = routers.DefaultRouter()
 
-router.register(r'createform', FeedbackFormApiView, basename="form")
-router.register(r'register', RegisterApiView, basename="register")
-router.register(r'login', LoginApiView, basename='login')
+router.register(r'forms', FeedbackFormApiView)
+router.register(r'auth', AuthApiViewSet, basename="users")
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/v1/', include(router.urls))
+    path('api/v1/', include(router.urls)),
+    path('users/', AuthApiViewSet.as_view({"get": "list"})),
+    path('feedbacks/', AuthApiViewSet.as_view({"get": "list"})),
+    path('api/v1/users/create', AuthApiViewSet.as_view({'post': "create"})),
+    path('api/v1/feedbacks/create', AuthApiViewSet.as_view({'post': "create"}))
 ]
