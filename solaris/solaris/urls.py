@@ -47,6 +47,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include(router.urls)),
     path('users/', AuthApiViewSet.as_view({"get": "list"})),
+    path('users/create', AuthApiViewSet.as_view({"post": "create"})),
     path('feedbacks/', AuthApiViewSet.as_view({"get": "list"})),
     path('api/v1/users/create', AuthApiViewSet.as_view({'post': "create"})),
     path('api/v1/feedbacks/create', AuthApiViewSet.as_view({'post': "create"}))
