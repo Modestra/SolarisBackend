@@ -1,3 +1,4 @@
+from typing import Any
 import uuid, jwt, datetime
 from django.db import models
 from django.conf import settings 
@@ -28,6 +29,12 @@ class UserManager(BaseUserManager):
         user.save()
 
         return user
+    
+class SchoolUserManager(models.Manager):
+
+    def create_admin():
+        """Создание пользователя администратора, если пользователь является суперпользователем"""
+        pass
 
 class CategoryType(models.TextChoices):
     ADMIN = 'Администратор', 'Администратор'
@@ -35,15 +42,13 @@ class CategoryType(models.TextChoices):
     PUPIL = 'Ученик', 'Ученик'
 
 class User(AbstractBaseUser, PermissionsMixin):
-    """Основная форма для пользователя, унаследованная от Django User"""
+    """Основная форма для пользователя, унаследованная от Django User. Является суперпользователем"""
     id = models.AutoField(primary_key=True)
     user_id = models.UUIDField(default=uuid.uuid4)
 
     email = models.EmailField(db_index=True, unique=True)
     username = models.CharField(db_index=True, max_length=255, unique=True)
     password = models.TextField()
-
-    category = models.CharField(max_length=25, choices=CategoryType.choices, default=CategoryType.PUPIL)
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
@@ -55,6 +60,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['username']
 
     objects = UserManager()
+    school = SchoolUserManager()
 
     def __str__(self) -> str:
         return self.email
@@ -75,6 +81,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         return token.decode('utf-8')
     
+class SchoolUser(models.Model):
+    """Форма школьного пользователя. Не имеет доступа к базе данных напрямую. Только для суперпользователя"""
+    id = models.AutoField(primary_key=True)
+    user_id = models.UUIDField(default=uuid.uuid4)
+    email = models.EmailField(db_index=True, unique=True)
+    username = models.CharField(db_index=True, max_length=255, unique=True)
+    password = models.TextField()
+    category = models.CharField(max_length=25, choices=CategoryType.choices, default=CategoryType.PUPIL)
+    is_admin = models.BooleanField(default=False)
 
 class Pupil(models.Model):
     """Основная модель для создания школьника. Создается учителем или администратором"""

@@ -39,16 +39,16 @@ schema_view = get_schema_view(
 
 router.register(r'forms', FeedbackFormApiView)
 router.register(r'auth', AuthApiViewSet)
+router.register(r'school', SchoolApiView)
 
 urlpatterns = [
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('admin/', admin.site.urls),
-    path('api/v1/', include(router.urls)),
-    path('users/', AuthApiViewSet.as_view({"get": "list"})),
-    path('users/create', AuthApiViewSet.as_view({"post": "create"})),
+    path('', include(router.urls)),
+    path('users/', SchoolApiView.as_view({"get": "list"})),
+    path('users/create', SchoolApiView.as_view({'post': 'create'})),
     path('feedbacks/', AuthApiViewSet.as_view({"get": "list"})),
-    path('api/v1/users/create', AuthApiViewSet.as_view({'post': "create"})),
-    path('api/v1/feedbacks/create', AuthApiViewSet.as_view({'post': "create"}))
+    path('feedbacks/create', AuthApiViewSet.as_view({'post': "create"}))
 ]

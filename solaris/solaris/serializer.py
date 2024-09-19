@@ -5,7 +5,10 @@ from solaris.models import *
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['email', 'username', 'password']
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    """Получение всех данных, если пользователь является администратором"""
 
 class FeedbackSerializer(serializers.ModelSerializer):
     """Форма заполнения для отзыва и предложений"""
@@ -13,3 +16,9 @@ class FeedbackSerializer(serializers.ModelSerializer):
         model = FeedbackForm
         fields = '__all__'
         field = ['name', 'phone', 'email', 'description']
+
+class SchoolSerializer(serializers.ModelSerializer):
+    """Форма сериализации для создания пользователя проекта. Только для суперпользователя"""
+    class Meta:
+        model = SchoolUser
+        fields = '__all__'
