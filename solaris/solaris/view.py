@@ -11,11 +11,11 @@ from solaris.mixin import *
 from solaris.models import *
 
 class AuthApiViewSet(viewsets.ModelViewSet):
-    """Авторизация пользователей администратором"""
+    """Авторизация пользователей для входа в приложение"""
     
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [AllowAny, IsAuthenticated]
+    queryset = SchoolUser.objects.all()
+    serializer_class = AuthSerializer
+    permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -43,7 +43,7 @@ class SchoolApiView(viewsets.ModelViewSet):
     """Логика создания модели пользователя в рамках проекта"""
     queryset = SchoolUser.objects.all()
     serializer_class = SchoolSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)

@@ -34,6 +34,7 @@ class SchoolUserManager(models.Manager):
 
     def create_admin():
         """Создание пользователя администратора, если пользователь является суперпользователем"""
+
         pass
 
 class CategoryType(models.TextChoices):
@@ -90,6 +91,27 @@ class SchoolUser(models.Model):
     password = models.TextField()
     category = models.CharField(max_length=25, choices=CategoryType.choices, default=CategoryType.PUPIL)
     is_admin = models.BooleanField(default=False)
+    class_name = models.CharField(max_length=3, null=True)
+
+    objects = models.Manager()
+
+    
+    @property
+    def token(self):
+        """Получение JWT токена путем вызова user.token"""
+        return self._generate_jwt_token()
+    
+    def _generate_jwt_token(self):
+
+        dt = datetime.datetime.now() + datetime.timedelta(days=1)
+
+        token = jwt.encode({
+            'id': self.pk,
+            'exp': int(dt.strftime('%s'))
+        }, settings.SECRET_KEY, algorithm='HS256')
+
+        return token.decode('utf-8')
+
 
 class Pupil(models.Model):
     """Основная модель для создания школьника. Создается учителем или администратором"""

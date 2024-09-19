@@ -13,6 +13,7 @@ jobs:
     if: github.ref == 'refs/heads/deploy'
     needs:
       - build
+      - admin-panel
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -52,3 +53,42 @@ jobs:
       - name: Run Tests
         run: |
           python manage.py test
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+    defaults:
+      run:
+        working-directory: "adminpanel/adminpanel"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Running Testings on Jest
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: npm ci
+      - run: npm run test
+
+  admin-panel:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+    defaults:
+      run:
+        working-directory: "adminpanel/adminpanel"
+    needs:
+      - test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: npm ci
+      - run: npm run build
