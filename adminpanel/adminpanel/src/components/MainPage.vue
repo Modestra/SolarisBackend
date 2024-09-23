@@ -1,5 +1,5 @@
 <template>
-    
+    Компанет главной страницы
 </template>
 
 <script lang="js"></script>
