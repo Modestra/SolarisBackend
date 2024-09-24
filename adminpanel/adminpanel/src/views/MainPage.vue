@@ -1,10 +1,9 @@
-<script setup>
-
-</script>
-
 <template>
     <main class="main-page">
         Главная страница
-    </main>    
+      </main>    
 </template>
+
+<script setup>
+</script>
 
