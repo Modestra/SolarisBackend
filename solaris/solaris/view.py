@@ -1,46 +1,53 @@
+from typing import Any
 from rest_framework import (status, viewsets)
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
+from rest_framework.permissions import *
+from rest_framework.authtoken.models import Token
 from solaris.serializer import *
 from solaris.mixin import *
+from solaris.models import *
 
-class RegisterApiView(APIView):
-    """Регистрация ученика со стороны администратора"""
-    def post(self, request):
-        serializers = AdminUserSerializer(data=request.data)
-        if serializers.is_valid():
-            user = serializers.save()
-            refresh = RefreshToken.for_user(user)
+class AuthApiViewSet(viewsets.ModelViewSet):
+    """Авторизация пользователей для входа в приложение"""
+    
+    queryset = SchoolUser.objects.all()
+    serializer_class = AuthSerializer
+    permission_classes = [AllowAny]
 
-            refresh.payload.update({
-                "login": user.login,
-                "password": user.password
-            })
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
-            return Response({"refresh": str(refresh), "access": str(refresh.access_token)}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({"error": "Невалидная форма записи"}, status=status.HTTP_403_FORBIDDEN)
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+    
+    
+class FeedbackFormApiView(viewsets.ModelViewSet):
+    """Логика создания feedback формы"""
 
-class LoginApiView(APIView):
-
-    def post(self, request):
-
-        serializers = UserSerializer(data=request.data)
-
-        if serializers.is_valid():
-            return Response(serializers.data, status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "Некорректно введены данные"}, status=status.HTTP_403_FORBIDDEN)
-
-class FeedbackFormApiView(viewsets.ViewSet):
+    queryset = FeedbackForm.objects.all()
+    serializer_class = FeedbackSerializer
     
     def list(self, request, *args, **kwargs):
-        return Response({"test": "test"}, status=status.HTTP_200_OK)
-    def post(self, request):
-        serializers = FeedbackSerializer(data=request.data)
-        if serializers.is_valid():
-            serializers.save()
-            return Response(serializers.data, status=status.HTTP_201_CREATED)
-        return Response({"error": "Некорректно введены данные"}, status=status.HTTP_400_BAD_REQUEST)
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+class SchoolApiView(viewsets.ModelViewSet):
+    """Логика создания модели пользователя в рамках проекта"""
+    queryset = SchoolUser.objects.all()
+    serializer_class = SchoolSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
     

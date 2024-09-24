@@ -2,29 +2,93 @@ name: Django CI
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master", "deploy"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master", "deploy"]
 
 jobs:
-  build:
+  ssh_connection:
+    name: Connection on Virtual Machine
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/deploy'
+    needs:
+      - build
+      - admin-panel
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+      - name: Executing remote ssh commands to deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            cd ${{ secrets.DIRECTORY_ROOT }}
+            ls
+            git pull origin deploy
+            bash ./scripts/docker-install.sh
 
+  build:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7, 3.8, 3.9]
-
+        python-version: [3.12]
+    defaults:
+      run:
+        working-directory: solaris
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    - name: Run Tests
-      run: |
-        python manage.py test
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install setuptools
+      - name: Run Tests
+        run: |
+          python manage.py test
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+    defaults:
+      run:
+        working-directory: "adminpanel/adminpanel"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Running Testings on Jest
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: npm ci
+      - run: npm run test
+
+  admin-panel:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [22.x]
+    defaults:
+      run:
+        working-directory: "adminpanel/adminpanel"
+    needs:
+      - test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: "**/package-lock.json"
+      - run: npm ci
+      - run: npm run build

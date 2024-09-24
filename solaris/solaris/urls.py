@@ -17,14 +17,38 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from solaris.view import *
-from rest_framework import routers
+from rest_framework import routers, permissions
 from rest_framework.routers import DefaultRouter
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 
 router = routers.DefaultRouter()
 
-router.register(r'createform', FeedbackFormApiView, basename="form")
+schema_view = get_schema_view(
+   openapi.Info(
+      title="Solaris API",
+      default_version='v1',
+      description="API для ссылок проекта",
+      terms_of_service="https://www.google.com/policies/terms/",
+      contact=openapi.Contact(email="contact@snippets.local"),
+      license=openapi.License(name="BSD License"),
+   ),
+   public=True,
+   permission_classes=(permissions.AllowAny,),
+)
+
+router.register(r'forms', FeedbackFormApiView)
+router.register(r'auth', AuthApiViewSet)
+router.register(r'school', SchoolApiView)
 
 urlpatterns = [
+    path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('admin/', admin.site.urls),
-    path('api/', include(router.urls))
+    path('', include(router.urls)),
+    path('users/', SchoolApiView.as_view({"get": "list"})),
+    path('users/create', SchoolApiView.as_view({'post': 'create'})),
+    path('feedbacks/', AuthApiViewSet.as_view({"get": "list"})),
+    path('feedbacks/create', AuthApiViewSet.as_view({'post': "create"}))
 ]
