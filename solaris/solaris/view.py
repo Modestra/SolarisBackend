@@ -50,4 +50,37 @@ class SchoolApiView(viewsets.ModelViewSet):
     
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
+
+class RulesApiViewSet(viewsets.ModelViewSet):
+
+    queryset = Rules.objects.all()
+    serializer_class = RulesSerializer
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+class CompetitionApiViewSet(viewsets.ModelViewSet):
+
+    queryset = Competition.objects.all()
+    serializer_class = CompetitionSerializer
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
+class ShopApiViewSet(viewsets.ModelViewSet):
+
+    queryset = Shop.objects.all()
+    serializer_class = ShopSerializer
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
     

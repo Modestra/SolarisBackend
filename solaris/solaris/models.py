@@ -42,6 +42,13 @@ class CategoryType(models.TextChoices):
     TEACHER = 'Учитель', 'Учитель'
     PUPIL = 'Ученик', 'Ученик'
 
+class RoutesChoices(models.TextChoices):
+    PATRIOT = "Патриотическое", "Патриотическое"
+    INGENER = "Инженер", "Инженер"
+    CHEMIST = "Химик", "Химик"
+    BIOLOG = "Биолог", "Биолог"
+    SPORT = "Спортсмен", "Спортсмен"
+
 class User(AbstractBaseUser, PermissionsMixin):
     """Основная форма для пользователя, унаследованная от Django User. Является суперпользователем"""
     id = models.AutoField(primary_key=True)
@@ -126,3 +133,18 @@ class FeedbackForm(models.Model):
     email = models.CharField(max_length=100)
     phone = models.CharField(max_length=25)
     description = models.TextField()
+
+class Competition(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    
+class Shop(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    cell = models.IntegerField()
+
+class Rules(models.Model):
+    id = models.AutoField(primary_key=True)
+    rule = models.CharField(max_length=255)
+    

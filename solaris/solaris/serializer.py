@@ -16,10 +16,27 @@ class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeedbackForm
         fields = '__all__'
-        field = ['name', 'phone', 'email', 'description']
 
 class SchoolSerializer(serializers.ModelSerializer):
     """Форма сериализации для создания пользователя проекта. Только для суперпользователя"""
     class Meta:
         model = SchoolUser
         fields = ['email', 'username', 'password', 'category', 'is_admin']
+
+class RulesSerializer(serializers.ModelSerializer):
+    """Форма заполнения для отзыва и предложений"""
+    class Meta:
+        model = Rules
+        fields = '__all__'
+
+class CompetitionSerializer(serializers.ModelSerializer):
+    """Форма заполнения для отзыва и предложений"""
+    class Meta:
+        model = Competition
+        fields = '__all__'
+
+class ShopSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Shop
+        fields = '__all__'
