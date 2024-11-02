@@ -38,9 +38,14 @@ class SchoolUserManager(models.Manager):
         pass
 
 class CategoryType(models.TextChoices):
-    ADMIN = 'Администратор', 'Администратор'
     TEACHER = 'Учитель', 'Учитель'
     PUPIL = 'Ученик', 'Ученик'
+
+class NotificationsType(models.TextChoices):
+    SUCCESS = "Успешно", "Успешно"
+    PROCESS = "В процессе", "В процессе"
+    ERROR = "Отказано", "Отказано"
+    NON_INFO = "Не подтверждён", "Не подтверждён"
 
 class RoutesChoices(models.TextChoices):
     PATRIOT = "Патриотическое", "Патриотическое"
@@ -59,6 +64,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     password = models.TextField()
 
     is_active = models.BooleanField(default=True)
+    #Показывает, имеет ли пользователь доступ к админке
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -136,8 +142,15 @@ class FeedbackForm(models.Model):
 
 class Competition(models.Model):
     id = models.AutoField(primary_key=True)
+    competition_id = models.UUIDField(default=uuid.uuid4)
     name = models.CharField(max_length=255)
     description = models.TextField()
+
+class CompetitionFiles(models.Model):
+    id = models.AutoField(primary_key=True)
+    competition_id = models.UUIDField()
+    name = models.CharField(max_length=255)
+    media = models.FileField(upload_to="media/", null=True, blank=True)
     
 class Shop(models.Model):
     id = models.AutoField(primary_key=True)
@@ -147,4 +160,12 @@ class Shop(models.Model):
 class Rules(models.Model):
     id = models.AutoField(primary_key=True)
     rule = models.CharField(max_length=255)
+
+class Notifications(models.Model):
+    """Блок передачи уведомлений о данных изменений пользователя"""
+    id = models.AutoField(primary_key=True)
+    user_id = models.UUIDField(default=uuid.uuid4)
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    status = models.CharField(max_length=255, choices=NotificationsType.choices, default="Не подтверждён")
     
