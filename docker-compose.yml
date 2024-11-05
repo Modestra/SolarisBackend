@@ -15,13 +15,6 @@ services:
       - backend
     depends_on:
       - postgress
-  admin-panel:
-    container_name: adminpanel
-    build:
-      context: ./adminpanel/adminpanel
-      dockerfile: Dockerfile
-    ports:
-      - 8100:80
   postgress:
     container_name: postgres_db
     image: postgres

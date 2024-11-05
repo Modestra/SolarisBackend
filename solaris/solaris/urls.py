@@ -43,6 +43,7 @@ router.register(r'school', SchoolApiView)
 router.register(r'rules', RulesApiViewSet)
 router.register(r'shop', ShopApiViewSet)
 router.register(r'competitions', CompetitionApiViewSet)
+router.register(r'files', CompetitionFilesApiViewSet)
 
 urlpatterns = [
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
@@ -56,6 +57,7 @@ urlpatterns = [
     path('feedbacks/create', FeedbackFormApiView.as_view({'post': "create"})),
     path('competitions/', CompetitionApiViewSet.as_view({"get": "list"})),
     path('competitions/create', CompetitionApiViewSet.as_view({'post': "create"})),
+    path('competitions/files/add', CompetitionFilesApiViewSet.as_view({'post': 'create'})),
     path('shop/', ShopApiViewSet.as_view({"get": "list"})),
     path('shop/create', ShopApiViewSet.as_view({"post": "create"})),
     path('rules/', RulesApiViewSet.as_view({"get": "list"})),

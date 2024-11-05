@@ -34,6 +34,13 @@ class CompetitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Competition
         fields = '__all__'
+        read_only_fields = ['competition_id']
+
+class CompetitionFileSerializer(serializers.ModelSerializer):
+    """Форма заполнения для отзыва и предложений"""
+    class Meta:
+        model = CompetitionFiles
+        fields = '__all__'
 
 class ShopSerializer(serializers.ModelSerializer):
 

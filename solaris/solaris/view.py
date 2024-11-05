@@ -9,6 +9,7 @@ from rest_framework.authtoken.models import Token
 from solaris.serializer import *
 from solaris.mixin import *
 from solaris.models import *
+from solaris.permissions import *
 
 class AuthApiViewSet(viewsets.ModelViewSet):
     """Авторизация пользователей для входа в приложение"""
@@ -21,17 +22,19 @@ class AuthApiViewSet(viewsets.ModelViewSet):
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-    
-    def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
-    
+        serializers = AuthSerializer(data=request.data)
+        if serializers.is_valid():
+            serializers.save()
+            user = SchoolUser.objects.get(username=request.data["username"])
+            return Response({"user": serializers.data, "token": user.token}, status=status.HTTP_200_OK)
+        return Response({"user": "Ошибка"}, status=status.HTTP_403_FORBIDDEN)
     
 class FeedbackFormApiView(viewsets.ModelViewSet):
     """Логика создания feedback формы"""
 
     queryset = FeedbackForm.objects.all()
     serializer_class = FeedbackSerializer
+    permission_classes = [IsAuthenticated]
     
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -43,7 +46,7 @@ class SchoolApiView(viewsets.ModelViewSet):
     """Логика создания модели пользователя в рамках проекта"""
     queryset = SchoolUser.objects.all()
     serializer_class = SchoolSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -55,6 +58,7 @@ class RulesApiViewSet(viewsets.ModelViewSet):
 
     queryset = Rules.objects.all()
     serializer_class = RulesSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -66,6 +70,28 @@ class CompetitionApiViewSet(viewsets.ModelViewSet):
 
     queryset = Competition.objects.all()
     serializer_class = CompetitionSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+    def add_files(self, request):
+        serializers = CompetitionFileSerializer(data=request.data)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response({"error": "Некорректный запрос со стороны клиента"}, status=status.HTTP_403_FORBIDDEN)
+
+            
+    
+class CompetitionFilesApiViewSet(viewsets.ModelViewSet):
+
+    queryset = CompetitionFiles.objects.all()
+    serializer_class =CompetitionFileSerializer
+    permission_classes = [AllowAny]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -77,10 +103,14 @@ class ShopApiViewSet(viewsets.ModelViewSet):
 
     queryset = Shop.objects.all()
     serializer_class = ShopSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAdminUser]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
     
+
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
+
+
     
