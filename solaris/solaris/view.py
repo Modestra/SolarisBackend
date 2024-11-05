@@ -78,6 +78,15 @@ class CompetitionApiViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
     
+    def add_files(self, request):
+        serializers = CompetitionFileSerializer(data=request.data)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response({"error": "Некорректный запрос со стороны клиента"}, status=status.HTTP_403_FORBIDDEN)
+
+            
+    
 class CompetitionFilesApiViewSet(viewsets.ModelViewSet):
 
     queryset = CompetitionFiles.objects.all()

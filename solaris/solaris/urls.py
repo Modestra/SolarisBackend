@@ -57,6 +57,7 @@ urlpatterns = [
     path('feedbacks/create', FeedbackFormApiView.as_view({'post': "create"})),
     path('competitions/', CompetitionApiViewSet.as_view({"get": "list"})),
     path('competitions/create', CompetitionApiViewSet.as_view({'post': "create"})),
+    path('competitions/files/add', CompetitionFilesApiViewSet.as_view({'post': 'create'})),
     path('shop/', ShopApiViewSet.as_view({"get": "list"})),
     path('shop/create', ShopApiViewSet.as_view({"post": "create"})),
     path('rules/', RulesApiViewSet.as_view({"get": "list"})),
