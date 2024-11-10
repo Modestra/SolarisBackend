@@ -1,15 +1,45 @@
 from rest_framework import (serializers, viewsets)
+from django.contrib.auth import authenticate
 from rest_framework.decorators import action
 from solaris.models import *
+from django.contrib.auth import authenticate
+import uuid
 
-class AuthSerializer(serializers.ModelSerializer):
-    """Авторизация пользователя"""
-    class Meta:
-        model = User
-        fields = ['username', 'password']
+class AuthSerializer(serializers.Serializer):
+    """Авторизация пользователя. Хранит информацию о токене, а так же о пользователе"""
+    username = serializers.CharField(max_length=255)
+    password = serializers.CharField(max_length=128, write_only=True)
+    
+    def validate(self, data):
+        username = data.get('username', None)
+        password = data.get('password', None)
 
-class AdminUserSerializer(serializers.ModelSerializer):
-    """Получение всех данных, если пользователь является администратором"""
+        if username is None:
+            raise serializers.ValidationError("Поле username пусто или некорректно")
+        
+        if password is None:
+            raise serializers.ValidationError("Поле password пусто или некорректно")
+        
+        return data
+        
+    def create(self, username, password):
+        try:
+            user = SchoolUser.objects.get(username=username, password=password)
+            return user
+        except SchoolUser.DoesNotExist:
+            return serializers.ValidationError("Пользователь с такими данными не найден")
+
+class AdminUserSerializer(serializers.Serializer):
+    """Создание пользователей администратором внутри самого проекта. Не является суперпользователей"""
+    email = serializers.EmailField()
+    username = serializers.CharField(max_length=255)
+    password = serializers.CharField(max_length=255)
+    category = serializers.ChoiceField(choices=CategoryType.choices)
+    class_name = serializers.CharField(max_length=3)
+
+    def create(self, validated_data):
+        #Не проверяется уникальность email
+        return SchoolUser.objects.create(**validated_data)
 
 class FeedbackSerializer(serializers.ModelSerializer):
     """Форма заполнения для отзыва и предложений"""
