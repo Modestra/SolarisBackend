@@ -10,6 +10,7 @@ from solaris.serializer import *
 from solaris.mixin import *
 from solaris.models import *
 from solaris.permissions import *
+from solaris.authentication import SolarisJWTAuthentification
 
 class AuthApiViewSet(ListViewSet):
     """Авторизация пользователей для входа в приложение"""
@@ -24,10 +25,9 @@ class AuthApiViewSet(ListViewSet):
     @action(detail=False, methods=["post"])
     def login(self, request, *args, **kwargs):
         serializers = AuthSerializer(data=request.data)
-        if serializers.is_valid():
-            user = serializers.create(username=request.data["username"], password=request.data["password"])
+        if serializers.is_valid(raise_exception=True):
             return Response({"user": serializers.data}, status=status.HTTP_200_OK)
-        return Response({"user": "Ошибка"}, status=status.HTTP_403_FORBIDDEN)
+        return Response(serializers.errors, status=status.HTTP_403_FORBIDDEN)
     
 class FeedbackFormApiView(viewsets.ModelViewSet):
     """Логика создания feedback формы"""
@@ -46,18 +46,26 @@ class SchoolApiView(ListViewSet):
     """Логика создания модели пользователя в рамках проекта. Создавать может только пользователь, если он является администратором"""
     queryset = SchoolUser.objects.all()
     serializer_class = SchoolSerializer
-    permission_classes = [AllowAny]
+    authentication_classes=[SolarisJWTAuthentification]
+    permission_classes = [AllowAny, IsSchoolAdmin]
 
     def list(self, request, *args, **kwargs):
+        """Вывести список всех пользователей"""
         return super().list(request, *args, **kwargs)
     
     @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer)
     def create_user(self, request, *args, **kwargs):
+        """Создает нового пользователя. Создавать пользователя может только администратор"""
         serializers = AdminUserSerializer(data=request.data)
         if serializers.is_valid():
             user = serializers.create(validated_data=request.data)
             return Response({"user": serializers.data, "token": user.token}, status=status.HTTP_201_CREATED)
         return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_403_FORBIDDEN)
+    
+    @action(detail=False, methods=["get"])
+    def get_token(self, request):
+        """Возвращает токен выбранного пользователя по user_id"""
+        pass
 
 class RulesApiViewSet(CreateListViewSet):
     """Правила. Пока непонятно, что это, но пусть работает"""

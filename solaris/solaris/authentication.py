@@ -16,24 +16,22 @@ class SolarisJWTAuthentification(BaseAuthentication):
 
     #Создание логики для авторизации
     def authenticate(self, request):
-        
-
+    
         request.user = None
 
         authorization_header = request.headers.get('Authorization')
-
         if not authorization_header:
             return None
         try:
             access_token = authorization_header.split(' ')[0]
         except(IndexError):
-            raise exceptions.AuthenticationFailed('Некорректный Token')
+            raise exceptions.AuthenticationFailed('Некорректный Token или пользователь незарегестрирован')
         
         return self._authenticate_credentials(request, access_token)
     
     def _authenticate_credentials(self, request, token):
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY) #Далее здесь токен декодируется, но вызывает ошибку
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"]) #Далее здесь токен декодируется, но вызывает ошибку
         except Exception:
             msg = 'Ошибка аутентификации. Невозможно декодировать токен'
             raise exceptions.AuthenticationFailed(msg)

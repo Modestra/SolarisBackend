@@ -8,26 +8,19 @@ import uuid
 class AuthSerializer(serializers.Serializer):
     """Авторизация пользователя. Хранит информацию о токене, а так же о пользователе"""
     username = serializers.CharField(max_length=255)
-    password = serializers.CharField(max_length=128, write_only=True)
+    password = serializers.CharField(max_length=128)
     
-    def validate(self, data):
+    def validate(self, data): #Пустые значения не передаются. Блокируются Swagger
         username = data.get('username', None)
         password = data.get('password', None)
+        
+        if not SchoolUser.objects.filter(username=username).exists() or not SchoolUser.objects.filter(password=password).exists():
+            raise serializers.ValidationError("Пользователь с данным именем или паролем не найден")
 
-        if username is None:
-            raise serializers.ValidationError("Поле username пусто или некорректно")
-        
-        if password is None:
-            raise serializers.ValidationError("Поле password пусто или некорректно")
-        
         return data
         
-    def create(self, username, password):
-        try:
-            user = SchoolUser.objects.get(username=username, password=password)
-            return user
-        except SchoolUser.DoesNotExist:
-            return serializers.ValidationError("Пользователь с такими данными не найден")
+    def create(self, validated_data):
+        return super().create(validated_data)
 
 class AdminUserSerializer(serializers.Serializer):
     """Создание пользователей администратором внутри самого проекта. Не является суперпользователей"""
