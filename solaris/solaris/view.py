@@ -62,9 +62,10 @@ class SchoolApiView(ListViewSet):
             return Response({"user": serializers.data, "token": user.token}, status=status.HTTP_201_CREATED)
         return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_403_FORBIDDEN)
     
-    @action(detail=False, methods=["get"])
+    @action(detail=False, methods=["post"], serializer_class=UserIdSerializer)
     def get_token(self, request):
         """Возвращает токен выбранного пользователя по user_id"""
+        serializers = UserIdSerializer(data=request.data)
         pass
 
 class RulesApiViewSet(CreateListViewSet):

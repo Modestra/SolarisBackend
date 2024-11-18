@@ -14,13 +14,22 @@ class AuthSerializer(serializers.Serializer):
         username = data.get('username', None)
         password = data.get('password', None)
         
-        if not SchoolUser.objects.filter(username=username).exists() or not SchoolUser.objects.filter(password=password).exists():
+        if not SchoolUser.objects.filter(username=username).exists() and not SchoolUser.objects.filter(password=password).exists():
             raise serializers.ValidationError("Пользователь с данным именем или паролем не найден")
 
         return data
         
     def create(self, validated_data):
         return super().create(validated_data)
+    
+class UserIdSerializer(serializers.Serializer):
+    user_id = serializers.UUIDField()
+
+    def validate(self, data):
+        user_id = data.get("user_id", None)
+        if not SchoolUser.objects.filter(user_id=user_id).exists():
+            raise serializers.ValidationError("Не удалось найти пользователя с данным id")
+        return data
 
 class AdminUserSerializer(serializers.Serializer):
     """Создание пользователей администратором внутри самого проекта. Не является суперпользователей"""

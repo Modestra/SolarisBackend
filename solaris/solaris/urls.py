@@ -52,16 +52,4 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
 
-    path('feedbacks/', FeedbackFormApiView.as_view({"get": "list"})),
-    path('feedbacks/create', FeedbackFormApiView.as_view({'post': "create"})),
-
-    path('competitions/', CompetitionApiViewSet.as_view({"get": "list"})),
-    path('competitions/create', CompetitionApiViewSet.as_view({'post': "create"})),
-    path('competitions/files/add', CompetitionFilesApiViewSet.as_view({'post': 'create'})),
-
-    path('shop/', ShopApiViewSet.as_view({"get": "list"})),
-    path('shop/create', ShopApiViewSet.as_view({"post": "create"})),
-
-    path('rules/', RulesApiViewSet.as_view({"get": "list"})),
-    path('rules/create', RulesApiViewSet.as_view({"post": "create"})),
 ]
