@@ -36,10 +36,14 @@ schema_view = get_schema_view(
    public=True,
    permission_classes=(permissions.AllowAny,),
 )
-
+#Регистрация готовых Views блоков для точек вхождения
 router.register(r'forms', FeedbackFormApiView)
 router.register(r'auth', AuthApiViewSet)
-router.register(r'school', SchoolApiView)
+router.register(r'user', SchoolApiView)
+router.register(r'rules', RulesApiViewSet)
+router.register(r'shop', ShopApiViewSet)
+router.register(r'competitions', CompetitionApiViewSet)
+router.register(r'files', CompetitionFilesApiViewSet)
 
 urlpatterns = [
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
@@ -47,8 +51,17 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
-    path('users/', SchoolApiView.as_view({"get": "list"})),
-    path('users/create', SchoolApiView.as_view({'post': 'create'})),
-    path('feedbacks/', AuthApiViewSet.as_view({"get": "list"})),
-    path('feedbacks/create', AuthApiViewSet.as_view({'post': "create"}))
+
+    path('feedbacks/', FeedbackFormApiView.as_view({"get": "list"})),
+    path('feedbacks/create', FeedbackFormApiView.as_view({'post': "create"})),
+
+    path('competitions/', CompetitionApiViewSet.as_view({"get": "list"})),
+    path('competitions/create', CompetitionApiViewSet.as_view({'post': "create"})),
+    path('competitions/files/add', CompetitionFilesApiViewSet.as_view({'post': 'create'})),
+
+    path('shop/', ShopApiViewSet.as_view({"get": "list"})),
+    path('shop/create', ShopApiViewSet.as_view({"post": "create"})),
+
+    path('rules/', RulesApiViewSet.as_view({"get": "list"})),
+    path('rules/create', RulesApiViewSet.as_view({"post": "create"})),
 ]

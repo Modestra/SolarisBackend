@@ -4,7 +4,7 @@ from django.middleware.csrf import CsrfViewMiddleware
 from rest_framework import exceptions
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from solaris.models import User
+from solaris.models import SchoolUser
 
 class CSRFCheck(CsrfViewMiddleware):
     def _reject(self, request, reason):
@@ -16,24 +16,34 @@ class SolarisJWTAuthentification(BaseAuthentication):
 
     #Создание логики для авторизации
     def authenticate(self, request):
-        
-        UserModel = User
-        authorization_header = request.headers.get('Authorization')
+    
+        request.user = None
 
+        authorization_header = request.headers.get('Authorization')
         if not authorization_header:
             return None
         try:
-            access_token = authorization_header.split(' ')[1]
-            payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms=['HS256'])
-        except:
-            raise exceptions.AuthenticationFailed('Некорректный Token')
+            access_token = authorization_header.split(' ')[0]
+        except(IndexError):
+            raise exceptions.AuthenticationFailed('Некорректный Token или пользователь незарегестрирован')
         
-        user = UserModel.objects.filter(user_id =payload['user_id']).first()
-
-        if user is None:
-            raise exceptions.AuthenticationFailed('Пользователь не найден')
+        return self._authenticate_credentials(request, access_token)
+    
+    def _authenticate_credentials(self, request, token):
+        try:
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"]) #Далее здесь токен декодируется, но вызывает ошибку
+        except Exception:
+            msg = 'Ошибка аутентификации. Невозможно декодировать токен'
+            raise exceptions.AuthenticationFailed(msg)
+        try:
+            #Доделать
+            #Стоит ли проверять на данном уровне является ли пользовать админом?
+            user = SchoolUser.objects.get(pk=payload['id']) #Потом в последствии декодинга получаем пользователя по id
+        except SchoolUser.DoesNotExist:
+            msg = 'Пользователь соответствующий данному токену не найден.'
+            raise exceptions.AuthenticationFailed(msg)
         
-        return (user, None)
+        return (user, token)
     
     def enforce_csrf(self, request):
         """
@@ -44,4 +54,5 @@ class SolarisJWTAuthentification(BaseAuthentication):
         reason = check.process_view(request, None, (), {})
         if reason:
             raise exceptions.PermissionDenied('CSRF Failed: %s' % reason)
+    
         
