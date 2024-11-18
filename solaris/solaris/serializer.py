@@ -1,15 +1,38 @@
 from rest_framework import (serializers, viewsets)
+from django.contrib.auth import authenticate
 from rest_framework.decorators import action
 from solaris.models import *
+from django.contrib.auth import authenticate
+import uuid
 
-class AuthSerializer(serializers.ModelSerializer):
-    """Авторизация пользователя"""
-    class Meta:
-        model = User
-        fields = ['username', 'password']
+class AuthSerializer(serializers.Serializer):
+    """Авторизация пользователя. Хранит информацию о токене, а так же о пользователе"""
+    username = serializers.CharField(max_length=255)
+    password = serializers.CharField(max_length=128)
+    
+    def validate(self, data): #Пустые значения не передаются. Блокируются Swagger
+        username = data.get('username', None)
+        password = data.get('password', None)
+        
+        if not SchoolUser.objects.filter(username=username).exists() or not SchoolUser.objects.filter(password=password).exists():
+            raise serializers.ValidationError("Пользователь с данным именем или паролем не найден")
 
-class AdminUserSerializer(serializers.ModelSerializer):
-    """Получение всех данных, если пользователь является администратором"""
+        return data
+        
+    def create(self, validated_data):
+        return super().create(validated_data)
+
+class AdminUserSerializer(serializers.Serializer):
+    """Создание пользователей администратором внутри самого проекта. Не является суперпользователей"""
+    email = serializers.EmailField()
+    username = serializers.CharField(max_length=255)
+    password = serializers.CharField(max_length=255)
+    category = serializers.ChoiceField(choices=CategoryType.choices)
+    class_name = serializers.CharField(max_length=3)
+
+    def create(self, validated_data):
+        #Не проверяется уникальность email
+        return SchoolUser.objects.create(**validated_data)
 
 class FeedbackSerializer(serializers.ModelSerializer):
     """Форма заполнения для отзыва и предложений"""

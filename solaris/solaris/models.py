@@ -31,10 +31,8 @@ class UserManager(BaseUserManager):
         return user
     
 class SchoolUserManager(models.Manager):
-
-    def create_admin():
-        """Создание пользователя администратора, если пользователь является суперпользователем"""
-
+    def create_admin(self, is_admin, **extra_fields):
+        user = self.model(is_admin=True, **extra_fields)
         pass
 
 class CategoryType(models.TextChoices):
@@ -90,13 +88,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         token = jwt.encode({
             'id': self.pk,
-            'exp': int(dt.strftime('%s'))
+            'exp': 1000
         }, settings.SECRET_KEY, algorithm='HS256')
 
-        return token.decode('utf-8')
+        return token
     
 class SchoolUser(models.Model):
-    """Форма школьного пользователя. Не имеет доступа к базе данных напрямую. Только для суперпользователя"""
+    """Форма школьного пользователя. Не имеет доступа к базе данных напрямую."""
     id = models.AutoField(primary_key=True)
     user_id = models.UUIDField(default=uuid.uuid4)
     email = models.EmailField(db_index=True, unique=True)
@@ -107,7 +105,6 @@ class SchoolUser(models.Model):
     class_name = models.CharField(max_length=3, null=True)
 
     objects = models.Manager()
-
     
     @property
     def token(self):
@@ -119,11 +116,11 @@ class SchoolUser(models.Model):
         dt = datetime.datetime.now() + datetime.timedelta(days=1)
 
         token = jwt.encode({
-            'id': self.pk,
-            'exp': int(dt.strftime('%s'))
+            'id': self.pk, #Создается токен на основе Id созданного пользователя
+            'exp': 1000
         }, settings.SECRET_KEY, algorithm='HS256')
 
-        return token.decode('utf-8')
+        return token
 
 
 class Pupil(models.Model):
