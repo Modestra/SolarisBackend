@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'pkg_resources',
     'rest_framework',
     'solaris',
-    'corsheaders'
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -95,6 +95,9 @@ AUTH_USER_MODEL = 'solaris.User'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        #'rest_framework_simplejwt.authentication.JWTAuthentication',
+        #'rest_framework.authentication.BasicAuthentication',
+        #'rest_framework.authentication.SessionAuthentication',
         #'rest_framework_simplejwt.authentication.JWTAuthentication',
         #'rest_framework.authentication.BasicAuthentication',
         #'rest_framework.authentication.SessionAuthentication',
