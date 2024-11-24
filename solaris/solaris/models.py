@@ -2,7 +2,7 @@ from typing import Any
 import uuid, jwt, datetime
 from django.db import models
 from django.conf import settings 
-from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin)
+from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin, AnonymousUser)
 
 class UserManager(BaseUserManager):
     """Наследование логики с модели пользователя Django для кастомного пользователя"""
@@ -52,6 +52,12 @@ class RoutesChoices(models.TextChoices):
     BIOLOG = "Биолог", "Биолог"
     SPORT = "Спортсмен", "Спортсмен"
 
+class Token(models.Model):
+    """Токены авторизации пользователя. Если пользователь зарегестрирован, но не авторизован в системе, то пользователь получит отказ"""
+    id = models.AutoField(primary_key=True)
+    user_id = models.UUIDField()
+    token = models.TextField()
+    update_date = models.DateTimeField()
 class User(AbstractBaseUser, PermissionsMixin):
     """Основная форма для пользователя, унаследованная от Django User. Является суперпользователем"""
     id = models.AutoField(primary_key=True)
@@ -102,6 +108,7 @@ class SchoolUser(models.Model):
     password = models.TextField()
     category = models.CharField(max_length=25, choices=CategoryType.choices, default=CategoryType.PUPIL)
     is_admin = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
     class_name = models.CharField(max_length=3, null=True)
 
     objects = models.Manager()
@@ -117,7 +124,7 @@ class SchoolUser(models.Model):
 
         token = jwt.encode({
             'id': self.pk, #Создается токен на основе Id созданного пользователя
-            'exp': 1000
+            'exp': 99999999999
         }, settings.SECRET_KEY, algorithm='HS256')
 
         return token

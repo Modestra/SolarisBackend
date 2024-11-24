@@ -22,6 +22,20 @@ class AuthSerializer(serializers.Serializer):
     def create(self, validated_data):
         return super().create(validated_data)
     
+class TokenSerializer(serializers.Serializer):
+    user_id = serializers.CharField(max_length=255)
+    token = serializers.CharField(max_length=1000,read_only=True)
+    update_time = serializers.DateTimeField(read_only=True)
+
+    def create(self, validated_data):
+        """Создает новый токен для пользователя по user_id"""
+        return Token.objects.create(**validated_data, update_date=datetime.datetime.now())
+    
+    def update(self, instance, validated_data):
+        instance.token = validated_data.get("token", instance.token)
+        instance.save()
+        return instance
+    
 class UserIdSerializer(serializers.Serializer):
     user_id = serializers.UUIDField()
 
@@ -49,11 +63,17 @@ class FeedbackSerializer(serializers.ModelSerializer):
         model = FeedbackForm
         fields = '__all__'
 
-class SchoolSerializer(serializers.ModelSerializer):
+class SchoolSerializer(serializers.Serializer):
     """Форма сериализации для создания пользователя проекта. Только для суперпользователя"""
-    class Meta:
-        model = SchoolUser
-        fields = ['email', 'username', 'password', 'category', 'is_admin']
+    user_id = serializers.UUIDField(read_only=True)
+    email = serializers.EmailField()
+    username = serializers.CharField(max_length=255)
+    password = serializers.CharField(max_length=1000)
+    category = serializers.ChoiceField(choices=CategoryType.choices)
+    is_admin = serializers.BooleanField(read_only=True)
+
+    def create(self, validated_data):
+        return SchoolUser.objects.create(**validated_data)
 
 class RulesSerializer(serializers.ModelSerializer):
     """Форма заполнения для отзыва и предложений"""

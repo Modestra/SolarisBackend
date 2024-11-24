@@ -12,8 +12,7 @@ class CSRFCheck(CsrfViewMiddleware):
         return reason
 
 class SolarisJWTAuthentification(BaseAuthentication):
-    """Логика для авторизации пользователей на основе кастомной модели solaris.User"""
-
+    """Логика для авторизации пользователей на основе кастомной модели solaris.User. Возвращает данные пользователя через request"""
     #Создание логики для авторизации
     def authenticate(self, request):
     
@@ -24,16 +23,16 @@ class SolarisJWTAuthentification(BaseAuthentication):
             return None
         try:
             access_token = authorization_header.split(' ')[0]
-        except(IndexError):
+        except IndexError:
             raise exceptions.AuthenticationFailed('Некорректный Token или пользователь незарегестрирован')
         
         return self._authenticate_credentials(request, access_token)
     
     def _authenticate_credentials(self, request, token):
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"]) #Далее здесь токен декодируется, но вызывает ошибку
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         except Exception:
-            msg = 'Ошибка аутентификации. Невозможно декодировать токен'
+            msg = f'Ошибка аутентификации. Срок годности токена истёк или некорректный токен'
             raise exceptions.AuthenticationFailed(msg)
         try:
             #Доделать

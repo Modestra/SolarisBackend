@@ -1,6 +1,6 @@
 from typing import Any
 from rest_framework import (status, viewsets, generics)
-from rest_framework.views import APIView
+from rest_framework.views import exception_handler
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
@@ -11,6 +11,7 @@ from solaris.mixin import *
 from solaris.models import *
 from solaris.permissions import *
 from solaris.authentication import SolarisJWTAuthentification
+from drf_yasg.utils import swagger_auto_schema
 
 class AuthApiViewSet(ListViewSet):
     """Авторизация пользователей для входа в приложение"""
@@ -26,15 +27,68 @@ class AuthApiViewSet(ListViewSet):
     def login(self, request, *args, **kwargs):
         serializers = AuthSerializer(data=request.data)
         if serializers.is_valid(raise_exception=True):
-            return Response({"user": serializers.data}, status=status.HTTP_200_OK)
+            user = SchoolUser.objects.get(username=serializers.data["username"])
+            token = Token.objects.get_or_create(user_id=user.user_id, token=user.token, update_date=datetime.datetime.now())
+            return Response({"user": serializers.data, "token": user.token}, status=status.HTTP_200_OK)
         return Response(serializers.errors, status=status.HTTP_403_FORBIDDEN)
+    
+class TokenApiView(ListViewSet):
+    """Таблица токенов пользователей. Необходим для подтверждения авторизации. 
+    Получить данные по токенам могут получить только авторизованные пользователи"""
+    queryset = Token.objects.all()
+    serializer_class = TokenSerializer
+    authentication_classes = [SolarisJWTAuthentification]
+    permission_classes = [AllowAny, IsSchoolAuthorized]
+
+    def list(self, request, *args, **kwargs):
+        """Получить список всех авторизованных пользователей"""
+        return super().list(request, *args, **kwargs)
+    
+    @action(detail=False, methods=["put"], permission_classes=[IsSchoolAuthorized])
+    def refresh_token(self, request, *args):
+        """Обновить токен пользователя, если у токена прошёл срок"""
+        serializers = TokenSerializer(data=request.data)
+        if serializers.is_valid():
+            token = TokenSerializer.update(validated_data=request.data)
+            return Response(serializers.data, status=status.HTTP_200_OK)
+        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_403_FORBIDDEN)
+    
+    @action(detail=False, methods=["post"], permission_classes=[IsSchoolAuthorized])
+    def create_user_token(self, request):
+        """Создать готовый токен по user_id"""
+        serializers = TokenSerializer(data=request.data)
+        if serializers.is_valid():
+            user = SchoolUser.objects.get(user_id=serializers.data["user_id"])
+            token = Token.objects.create(user_id=user.user_id, token=user.token, update_date=datetime.datetime.now())
+            return Response({"user_id": token.user_id, "token": token.token}, status=status.HTTP_201_CREATED)
+        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_403_FORBIDDEN)
+    
+    @action(detail=False, methods=["post"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAuthorized])
+    def get_user_token(self, request):
+        """Получить токен по user_id"""
+        serializers = TokenSerializer(data=request.data)
+        if serializers.is_valid():
+            user = SchoolUser.objects.get(user_id=serializers.data["user_id"])
+            return Response({"user_id": user.user_id, "token": user.token}, status=status.HTTP_200_OK)
+        return Response({"error": "Не удалось получить токен"}, status=status.HTTP_403_FORBIDDEN)
+    
+    @swagger_auto_schema(request_body=TokenSerializer)
+    @action(detail=False, methods=["delete"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAuthorized])
+    def delete_user_token(self, request):
+        """Удалить токен по user_id"""
+        serializers = TokenSerializer(data=request.data)
+        if serializers.is_valid():
+            token = Token.objects.filter(user_id=serializers.data["user_id"]).delete()
+            return Response({"success": "Данные удалены"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_403_FORBIDDEN)
     
 class FeedbackFormApiView(viewsets.ModelViewSet):
     """Логика создания feedback формы"""
 
     queryset = FeedbackForm.objects.all()
     serializer_class = FeedbackSerializer
-    permission_classes = [IsAuthenticated]
+    authentication_classes=[SolarisJWTAuthentification]
+    permission_classes = [IsSchoolAuthorized]
     
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
@@ -47,26 +101,41 @@ class SchoolApiView(ListViewSet):
     queryset = SchoolUser.objects.all()
     serializer_class = SchoolSerializer
     authentication_classes=[SolarisJWTAuthentification]
-    permission_classes = [AllowAny, IsSchoolAdmin]
+    permission_classes = [AllowAny, IsSchoolAdmin, IsSchoolAuthorized]
 
     def list(self, request, *args, **kwargs):
-        """Вывести список всех пользователей"""
+        """Вывести список всех пользователей. Получить данные пользователей можно, если пользователь зарегестрирован и админ"""
         return super().list(request, *args, **kwargs)
     
-    @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer)
+    @swagger_auto_schema(request_body=TokenSerializer)
+    @action(detail=False, methods=["delete"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAdmin, IsAuthenticated])
+    def delete_user(self, request):
+        """Удаление пользователя по user_id. Так же при удалении пользователя удаляются и его токены авторизации"""
+        serializers = TokenSerializer(data=request.data)
+        if serializers.is_valid():
+            user = SchoolUser.objects.filter(user_id=serializers.data["user_id"]).delete()
+            token = Token.objects.filter(user_id=serializers.data["user_id"]).delete()
+            return Response({"success": "Данные удалены"}, status=status.HTTP_204_NO_CONTENT)
+        return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_403_FORBIDDEN)
+    
+    @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer, permission_classes=[IsSchoolAdmin, IsAuthenticated])
     def create_user(self, request, *args, **kwargs):
         """Создает нового пользователя. Создавать пользователя может только администратор"""
         serializers = AdminUserSerializer(data=request.data)
         if serializers.is_valid():
-            user = serializers.create(validated_data=request.data)
-            return Response({"user": serializers.data, "token": user.token}, status=status.HTTP_201_CREATED)
+            serializers.save()
+            user = SchoolUser.objects.get(username=serializers.data["username"])
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
         return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_403_FORBIDDEN)
     
-    @action(detail=False, methods=["post"], serializer_class=UserIdSerializer)
+    @action(detail=False, methods=["post"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAuthorized])
     def get_token(self, request):
-        """Возвращает токен выбранного пользователя по user_id"""
-        serializers = UserIdSerializer(data=request.data)
-        pass
+        """Возвращает токен выбранного пользователя по user_id. Получить могут только авторизованные пользователи"""
+        serializers = TokenSerializer(data=request.data)
+        if serializers.is_valid():
+            token = Token.objects.get(user_id=serializers.data["user_id"])
+            return Response(serializers.data, status=status.HTTP_202_ACCEPTED)
+        return Response({"error": "Пользователь ранее был авторизован или его токен устарел"}, status=status.HTTP_403_FORBIDDEN)
 
 class RulesApiViewSet(CreateListViewSet):
     """Правила. Пока непонятно, что это, но пусть работает"""

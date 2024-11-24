@@ -175,9 +175,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 SWAGGER_SETTINGS = {
    'SECURITY_DEFINITIONS': {
-      'Basic': {
-            'type': 'basic'
-      },
       'Bearer': {
             'type': 'apiKey',
             'name': 'Authorization',
