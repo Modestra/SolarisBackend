@@ -12,3 +12,7 @@ class ListViewSet(GenericViewSet, mixins.ListModelMixin):
 class ListDeleteViewSet(GenericViewSet, mixins.ListModelMixin, mixins.DestroyModelMixin):
     """Методы только для просмотра и удаление пользователей"""
     pass
+
+class FullViewSet(GenericViewSet, mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin):
+    """Полная обработка модели"""
+    pass

@@ -108,7 +108,7 @@ class SchoolApiView(ListViewSet):
         return super().list(request, *args, **kwargs)
     
     @swagger_auto_schema(request_body=TokenSerializer)
-    @action(detail=False, methods=["delete"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAdmin, IsAuthenticated])
+    @action(detail=False, methods=["delete"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAdmin, IsSchoolAuthorized])
     def delete_user(self, request):
         """Удаление пользователя по user_id. Так же при удалении пользователя удаляются и его токены авторизации"""
         serializers = TokenSerializer(data=request.data)
@@ -118,7 +118,7 @@ class SchoolApiView(ListViewSet):
             return Response({"success": "Данные удалены"}, status=status.HTTP_204_NO_CONTENT)
         return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_403_FORBIDDEN)
     
-    @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer, permission_classes=[IsSchoolAdmin, IsAuthenticated])
+    @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer, permission_classes=[IsSchoolAdmin, IsSchoolAuthorized])
     def create_user(self, request, *args, **kwargs):
         """Создает нового пользователя. Создавать пользователя может только администратор"""
         serializers = AdminUserSerializer(data=request.data)
@@ -150,7 +150,7 @@ class RulesApiViewSet(CreateListViewSet):
         return super().create(request, *args, **kwargs)
     
 class CompetitionApiViewSet(CreateListViewSet):
-
+    """Обработка конкурсов. К конкурсам относятся как школьные, так и для учителей"""
     queryset = Competition.objects.all()
     serializer_class = CompetitionSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -169,7 +169,7 @@ class CompetitionApiViewSet(CreateListViewSet):
         return Response({"error": "Некорректный запрос со стороны клиента"}, status=status.HTTP_403_FORBIDDEN)
             
 class CompetitionFilesApiViewSet(CreateListViewSet):
-
+    """Хранилище файлов для определенных конкурсов"""
     queryset = CompetitionFiles.objects.all()
     serializer_class = CompetitionFileSerializer
     permission_classes = [AllowAny]
