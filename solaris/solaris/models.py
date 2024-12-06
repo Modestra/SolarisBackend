@@ -3,6 +3,7 @@ import uuid, jwt, datetime
 from django.db import models
 from django.conf import settings 
 from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin, AnonymousUser)
+from rest_framework import exceptions
 
 class UserManager(BaseUserManager):
     """Наследование логики с модели пользователя Django для кастомного пользователя"""
@@ -57,7 +58,7 @@ class Token(models.Model):
     id = models.AutoField(primary_key=True)
     user_id = models.UUIDField()
     token = models.TextField()
-    update_date = models.DateTimeField()
+    update_date = models.DateTimeField(default=datetime.datetime.now())
 class User(AbstractBaseUser, PermissionsMixin):
     """Основная форма для пользователя, унаследованная от Django User. Является суперпользователем"""
     id = models.AutoField(primary_key=True)
@@ -128,13 +129,22 @@ class SchoolUser(models.Model):
         }, settings.SECRET_KEY, algorithm='HS256')
 
         return token
+    
+    def is_token_olded(self, token):
+        """Проверка старости токена. Не генерирует новый"""
+        return self._is_token_olded(token)
 
+    def _is_token_olded(token):
+        pass
 
 class Pupil(models.Model):
     """Основная модель для создания школьника. Создается учителем или администратором"""
     id = models.AutoField(primary_key=True) # id
     name = models.TextField() #Имя
     surname = models.TextField() #Фамилия
+    class_name = models.CharField(max_length=5)
+    competition_activities = models.TextField() #Строка, которая указывает, в каких конкурсах участвует школьник
+    shop_id = models.UUIDField(default=uuid.uuid4) #Идентификатор кошелька для магазина
     teacher_id = models.UUIDField(default= uuid.uuid4) #id, привязывающая к учителю. У учителя значение равно None
 
 class FeedbackForm(models.Model):
@@ -149,6 +159,12 @@ class Competition(models.Model):
     competition_id = models.UUIDField(default=uuid.uuid4)
     name = models.CharField(max_length=255)
     description = models.TextField()
+    goal_competition = models.TextField()
+    tasks_compotition = models.TextField()
+    author_id = models.UUIDField()
+    owners_id = models.TextField()
+    rules = models.CharField(max_length=255)
+
 
 class CompetitionFiles(models.Model):
     id = models.AutoField(primary_key=True)
@@ -168,7 +184,7 @@ class Rules(models.Model):
 class Notifications(models.Model):
     """Блок передачи уведомлений о данных изменений пользователя"""
     id = models.AutoField(primary_key=True)
-    user_id = models.UUIDField(default=uuid.uuid4)
+    user_id = models.UUIDField()
     name = models.CharField(max_length=255)
     description = models.TextField()
     status = models.CharField(max_length=255, choices=NotificationsType.choices, default="Не подтверждён")

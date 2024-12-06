@@ -1,4 +1,5 @@
 from typing import Any
+import os
 from rest_framework import (status, viewsets, generics)
 from rest_framework.views import exception_handler
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -6,11 +7,13 @@ from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.response import Response
 from rest_framework.permissions import *
 from rest_framework.authtoken.models import Token
+from rest_framework.parsers import MultiPartParser
 from solaris.serializer import *
 from solaris.mixin import *
 from solaris.models import *
 from solaris.permissions import *
 from solaris.authentication import SolarisJWTAuthentification
+from solaris.encoder import MessageEncoder
 from drf_yasg.utils import swagger_auto_schema
 
 class AuthApiViewSet(ListViewSet):
@@ -28,9 +31,11 @@ class AuthApiViewSet(ListViewSet):
         serializers = AuthSerializer(data=request.data)
         if serializers.is_valid(raise_exception=True):
             user = SchoolUser.objects.get(username=serializers.data["username"])
-            token = Token.objects.get_or_create(user_id=user.user_id, token=user.token, update_date=datetime.datetime.now())
+            if SchoolUser.objects.filter(username=serializers.data["username"]).exists():
+                token = Token.objects.update(user_id=user.user_id, token=user.token, update_date=datetime.datetime.now())
+            token = Token.objects.create(user_id=user.user_id, token=user.token)
             return Response({"user": serializers.data, "token": user.token}, status=status.HTTP_200_OK)
-        return Response(serializers.errors, status=status.HTTP_403_FORBIDDEN)
+        return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class TokenApiView(ListViewSet):
     """Таблица токенов пользователей. Необходим для подтверждения авторизации. 
@@ -50,8 +55,8 @@ class TokenApiView(ListViewSet):
         serializers = TokenSerializer(data=request.data)
         if serializers.is_valid():
             token = TokenSerializer.update(validated_data=request.data)
-            return Response(serializers.data, status=status.HTTP_200_OK)
-        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"token": serializers.data, "message": "Токен был обновлен"}, status=status.HTTP_200_OK)
+        return Response({"message": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=["post"], permission_classes=[IsSchoolAuthorized])
     def create_user_token(self, request):
@@ -61,7 +66,7 @@ class TokenApiView(ListViewSet):
             user = SchoolUser.objects.get(user_id=serializers.data["user_id"])
             token = Token.objects.create(user_id=user.user_id, token=user.token, update_date=datetime.datetime.now())
             return Response({"user_id": token.user_id, "token": token.token}, status=status.HTTP_201_CREATED)
-        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=["post"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAuthorized])
     def get_user_token(self, request):
@@ -70,7 +75,7 @@ class TokenApiView(ListViewSet):
         if serializers.is_valid():
             user = SchoolUser.objects.get(user_id=serializers.data["user_id"])
             return Response({"user_id": user.user_id, "token": user.token}, status=status.HTTP_200_OK)
-        return Response({"error": "Не удалось получить токен"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Не удалось получить токен"}, status=status.HTTP_400_BAD_REQUEST)
     
     @swagger_auto_schema(request_body=TokenSerializer)
     @action(detail=False, methods=["delete"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAuthorized])
@@ -80,7 +85,7 @@ class TokenApiView(ListViewSet):
         if serializers.is_valid():
             token = Token.objects.filter(user_id=serializers.data["user_id"]).delete()
             return Response({"success": "Данные удалены"}, status=status.HTTP_204_NO_CONTENT)
-        return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_400_BAD_REQUEST)
     
 class FeedbackFormApiView(viewsets.ModelViewSet):
     """Логика создания feedback формы"""
@@ -107,6 +112,12 @@ class SchoolApiView(ListViewSet):
         """Вывести список всех пользователей. Получить данные пользователей можно, если пользователь зарегестрирован и админ"""
         return super().list(request, *args, **kwargs)
     
+    @action(detail=False, methods=["get"], permission_classes=[IsSchoolAuthorized])
+    def current_user(self, request):
+        """Получить user_id авторизированного пользователя"""
+        user = SchoolUser.objects.get(user_id=request.user.user_id)
+        return Response({"user_id": user.user_id}, status=status.HTTP_200_OK)
+    
     @swagger_auto_schema(request_body=TokenSerializer)
     @action(detail=False, methods=["delete"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAdmin, IsSchoolAuthorized])
     def delete_user(self, request):
@@ -116,7 +127,7 @@ class SchoolApiView(ListViewSet):
             user = SchoolUser.objects.filter(user_id=serializers.data["user_id"]).delete()
             token = Token.objects.filter(user_id=serializers.data["user_id"]).delete()
             return Response({"success": "Данные удалены"}, status=status.HTTP_204_NO_CONTENT)
-        return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer, permission_classes=[IsSchoolAdmin, IsSchoolAuthorized])
     def create_user(self, request, *args, **kwargs):
@@ -126,7 +137,7 @@ class SchoolApiView(ListViewSet):
             serializers.save()
             user = SchoolUser.objects.get(username=serializers.data["username"])
             return Response(serializers.data, status=status.HTTP_201_CREATED)
-        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=["post"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAuthorized])
     def get_token(self, request):
@@ -135,8 +146,20 @@ class SchoolApiView(ListViewSet):
         if serializers.is_valid():
             token = Token.objects.get(user_id=serializers.data["user_id"])
             return Response(serializers.data, status=status.HTTP_202_ACCEPTED)
-        return Response({"error": "Пользователь ранее был авторизован или его токен устарел"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Пользователь ранее был авторизован или его токен устарел"}, status=status.HTTP_400_BAD_REQUEST)
+    
+class PipulApiViewSet(CreateListViewSet):
+    """Пользователи, являющиеся школьниками. Доступ ко всем школьникам имеет только администратор. Преподаватель получает только свой класс"""
+    queryset = Pupil.objects.all()
+    serializer_class = SchoolSerializer
+    permission_classes=[IsSchoolAuthorized, IsSchoolAdmin]
 
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
 class RulesApiViewSet(CreateListViewSet):
     """Правила. Пока непонятно, что это, но пусть работает"""
     queryset = Rules.objects.all()
@@ -149,7 +172,7 @@ class RulesApiViewSet(CreateListViewSet):
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
     
-class CompetitionApiViewSet(CreateListViewSet):
+class CompetitionApiViewSet(ListViewSet):
     """Обработка конкурсов. К конкурсам относятся как школьные, так и для учителей"""
     queryset = Competition.objects.all()
     serializer_class = CompetitionSerializer
@@ -158,27 +181,40 @@ class CompetitionApiViewSet(CreateListViewSet):
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
     
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+    @action(detail=False, methods=["post"], serializer_class=CompetitionSerializer)
+    def create_competition(self, request):
+        """Создать конкурс. Автор конкурса является только администратор, зарегестрировавший его"""
+        return Response({}, status=status.HTTP_201_CREATED)
     
+    @action(detail=False, methods=["post"])
+    def add_owners(self, request):
+        """Добавить преподавательский состав для конкурса"""
+        pass
+    
+    @action(detail=False, methods=["post"], serializer_class=CompetitionFileSerializer)
     def add_files(self, request):
+        """Добавить файл в активный конкурс. В случае отсутствия конкурса или его неактивности файл добавить не получится"""
         serializers = CompetitionFileSerializer(data=request.data)
         if serializers.is_valid():
             serializers.save()
             return Response(serializers.data, status=status.HTTP_201_CREATED)
-        return Response({"error": "Некорректный запрос со стороны клиента"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Некорректный запрос со стороны клиента"}, status=status.HTTP_400_BAD_REQUEST)
             
-class CompetitionFilesApiViewSet(CreateListViewSet):
+class CompetitionFilesApiViewSet(ListViewSet):
     """Хранилище файлов для определенных конкурсов"""
     queryset = CompetitionFiles.objects.all()
     serializer_class = CompetitionFileSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny, IsSchoolAdmin, IsSchoolAuthorized]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
     
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+    @swagger_auto_schema(request_body=CompetitionFileSerializer)
+    @action(detail=False, methods=["post"], serializer_class=CompetitionFileSerializer, parser_classes=[MultiPartParser])
+    def create_file(self, request):
+        if serializers.is_valid():
+            return Response({}, status=status.HTTP_201_CREATED)
+        return Response({}, status=status.HTTP_400_BAD_REQUEST)
 
 class ShopApiViewSet(CreateListViewSet):
 

@@ -27,9 +27,15 @@ class TokenSerializer(serializers.Serializer):
     token = serializers.CharField(max_length=1000,read_only=True)
     update_time = serializers.DateTimeField(read_only=True)
 
+    def validate(self, attrs):
+        user_id = attrs.get('user_id', None)
+        if SchoolUser.objects.filter(user_id=user_id).exists():
+            return attrs
+        return serializers.ValidationError("Токенов с данным user_id несуществует. Пользовать ранее не авторизовывался")
     def create(self, validated_data):
         """Создает новый токен для пользователя по user_id"""
-        return Token.objects.create(**validated_data, update_date=datetime.datetime.now())
+        if Token.objects.filter(user_id=validated_data.data["user_id"]).exists():
+            return Token.objects.filter(**validated_data)
     
     def update(self, instance, validated_data):
         instance.token = validated_data.get("token", instance.token)
@@ -74,25 +80,38 @@ class SchoolSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         return SchoolUser.objects.create(**validated_data)
+    
+class PipulSerializer(serializers.Serializer):
+
+    
+    def validate(self, attrs):
+        return super().validate(attrs)
 
 class RulesSerializer(serializers.ModelSerializer):
-    """Форма заполнения для отзыва и предложений"""
+    """Форма каких-то правил"""
     class Meta:
         model = Rules
         fields = '__all__'
 
 class CompetitionSerializer(serializers.ModelSerializer):
-    """Форма заполнения для отзыва и предложений"""
+    """Форма для создания конкурса"""
     class Meta:
         model = Competition
         fields = '__all__'
         read_only_fields = ['competition_id']
 
-class CompetitionFileSerializer(serializers.ModelSerializer):
-    """Форма заполнения для отзыва и предложений"""
-    class Meta:
-        model = CompetitionFiles
-        fields = '__all__'
+class CompetitionFileSerializer(serializers.Serializer):
+    """Форма для работы с файлами конкурсов"""
+    competition_id = serializers.CharField(max_length=255, read_only=True)
+    media = models.FileField()
+
+    def validate(self, attrs):
+        return super().validate(attrs)
+    
+    def create(self, validated_data):
+        return CompetitionFiles.objects.create(**validated_data)
+    
+#Добавить новые сериалайзеры для конкурсов
 
 class ShopSerializer(serializers.ModelSerializer):
 
