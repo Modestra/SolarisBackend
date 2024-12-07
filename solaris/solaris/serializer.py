@@ -57,7 +57,6 @@ class AdminUserSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=255)
     password = serializers.CharField(max_length=255)
     category = serializers.ChoiceField(choices=CategoryType.choices)
-    class_name = serializers.CharField(max_length=3)
 
     def create(self, validated_data):
         #Не проверяется уникальность email
@@ -82,10 +81,37 @@ class SchoolSerializer(serializers.Serializer):
         return SchoolUser.objects.create(**validated_data)
     
 class PipulSerializer(serializers.Serializer):
+    """Форма регистрации школьника"""
+    name = serializers.CharField(max_length=100)
+    surname = serializers.CharField(max_length=100) 
+    fathername = serializers.CharField(max_length=100)
+    user_id = serializers.UUIDField()
+    class_name = models.CharField(max_length=5, default="1А")
+    competition_activities = models.TextField(null=True)
+    shop_id = serializers.UUIDField(read_only=True)
+    teacher_id = serializers.UUIDField()
 
-    
     def validate(self, attrs):
         return super().validate(attrs)
+    
+    def create(self, validated_data):
+        return Pupil.objects.create(**validated_data)
+    
+class TeacherSerializer(serializers.Serializer):
+    """Форма регистрации учителя"""
+    user_id = serializers.UUIDField(default=uuid.uuid4)
+    teacher_id = serializers.UUIDField(read_only=True)
+    name = serializers.CharField(max_length=100)
+    surname = serializers.CharField(max_length=100)
+    fathername = serializers.CharField(max_length=100)
+    profeccion = serializers.ChoiceField(choices=ProfeccionChoices.choices)
+    competition_activities = serializers.CharField(max_length=25565, read_only=True)
+
+    def validate(self, attrs):
+        return super().validate(attrs)
+    
+    def create(self, validated_data):
+        return Teacher.objects.create(**validated_data)
 
 class RulesSerializer(serializers.ModelSerializer):
     """Форма каких-то правил"""

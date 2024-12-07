@@ -45,7 +45,8 @@ router.register(r'shop', ShopApiViewSet)
 router.register(r'competitions', CompetitionApiViewSet)
 router.register(r'files', CompetitionFilesApiViewSet)
 router.register(r'token', TokenApiView)
-router.register(r'pipul', PipulApiViewSet)
+router.register(r'pipul', PupilApiViewSet)
+router.register(r'teacher', TeacherApiViewSet)
 
 urlpatterns = [
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),

@@ -53,12 +53,19 @@ class RoutesChoices(models.TextChoices):
     BIOLOG = "Биолог", "Биолог"
     SPORT = "Спортсмен", "Спортсмен"
 
+class ProfeccionChoices(models.TextChoices):
+    PUSSIAN = "Русский язык", "Русский язык"
+    LITERATURE = "Литература", "Литература"
+    MATH = "Математика", "Математика"
+    DEFAULT = "Свободен", "Свободен"
+
 class Token(models.Model):
     """Токены авторизации пользователя. Если пользователь зарегестрирован, но не авторизован в системе, то пользователь получит отказ"""
     id = models.AutoField(primary_key=True)
     user_id = models.UUIDField()
     token = models.TextField()
     update_date = models.DateTimeField(default=datetime.datetime.now())
+
 class User(AbstractBaseUser, PermissionsMixin):
     """Основная форма для пользователя, унаследованная от Django User. Является суперпользователем"""
     id = models.AutoField(primary_key=True)
@@ -110,9 +117,11 @@ class SchoolUser(models.Model):
     category = models.CharField(max_length=25, choices=CategoryType.choices, default=CategoryType.PUPIL)
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-    class_name = models.CharField(max_length=3, null=True)
 
     objects = models.Manager()
+
+    def __str__(self):
+        return self.username
     
     @property
     def token(self):
@@ -137,15 +146,34 @@ class SchoolUser(models.Model):
     def _is_token_olded(token):
         pass
 
+class Teacher(models.Model):
+    """Основная модель для создания учителя. Создается только администратором"""
+    id = models.AutoField(primary_key=True)
+    user_id = models.UUIDField(default=uuid.uuid4)
+    teacher_id = models.UUIDField(default=uuid.uuid4)
+    name = models.TextField()
+    surname = models.TextField()
+    fathername = models.TextField(null=True)
+    profeccion = models.CharField(max_length=255, choices=ProfeccionChoices.choices, default=ProfeccionChoices.DEFAULT)
+    competition_activities = models.TextField(null=True)
+
+    def __str__(self):
+        return self.surname + self.name
+
 class Pupil(models.Model):
-    """Основная модель для создания школьника. Создается учителем или администратором"""
+    """Основная модель для создания школьника. Создается администратором"""
     id = models.AutoField(primary_key=True) # id
     name = models.TextField() #Имя
     surname = models.TextField() #Фамилия
-    class_name = models.CharField(max_length=5)
-    competition_activities = models.TextField() #Строка, которая указывает, в каких конкурсах участвует школьник
+    fathername = models.TextField(null=True)
+    user_id = models.UUIDField(default=uuid.uuid4)
+    class_name = models.CharField(max_length=5, default="1А")
+    competition_activities = models.TextField(null=True) #Строка, которая указывает, в каких конкурсах участвует школьник
     shop_id = models.UUIDField(default=uuid.uuid4) #Идентификатор кошелька для магазина
-    teacher_id = models.UUIDField(default= uuid.uuid4) #id, привязывающая к учителю. У учителя значение равно None
+    teacher_id = models.UUIDField(default=uuid.uuid4)
+
+    def __str__(self):
+        return self.name + self.surname
 
 class FeedbackForm(models.Model):
     id = models.AutoField(primary_key=True)
@@ -155,18 +183,19 @@ class FeedbackForm(models.Model):
     description = models.TextField()
 
 class Competition(models.Model):
+    """Конкурсы. Основная информация"""
     id = models.AutoField(primary_key=True)
     competition_id = models.UUIDField(default=uuid.uuid4)
     name = models.CharField(max_length=255)
     description = models.TextField()
-    goal_competition = models.TextField()
-    tasks_compotition = models.TextField()
-    author_id = models.UUIDField()
-    owners_id = models.TextField()
-    rules = models.CharField(max_length=255)
-
+    goal_competition = models.TextField(null=True)
+    tasks_compotition = models.TextField(null=True)
+    author_id = models.UUIDField(null=False, default=uuid.uuid4)
+    owners_id = models.TextField(null=False, default=uuid.uuid4)
+    rules = models.CharField(max_length=255, null=False, default="Нет")
 
 class CompetitionFiles(models.Model):
+    """Конкурсные файлы. """
     id = models.AutoField(primary_key=True)
     competition_id = models.UUIDField()
     name = models.CharField(max_length=255)

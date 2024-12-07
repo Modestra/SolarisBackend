@@ -129,7 +129,9 @@ class SchoolApiView(ListViewSet):
             return Response({"success": "Данные удалены"}, status=status.HTTP_204_NO_CONTENT)
         return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_400_BAD_REQUEST)
     
-    @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer, permission_classes=[IsSchoolAdmin, IsSchoolAuthorized])
+    @swagger_auto_schema(parser_classes=[MultiPartParser], request_body=AdminUserSerializer)
+    @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer, 
+            permission_classes=[IsSchoolAdmin, IsSchoolAuthorized], parser_classes=[MultiPartParser])
     def create_user(self, request, *args, **kwargs):
         """Создает нового пользователя. Создавать пользователя может только администратор"""
         serializers = AdminUserSerializer(data=request.data)
@@ -148,18 +150,45 @@ class SchoolApiView(ListViewSet):
             return Response(serializers.data, status=status.HTTP_202_ACCEPTED)
         return Response({"error": "Пользователь ранее был авторизован или его токен устарел"}, status=status.HTTP_400_BAD_REQUEST)
     
-class PipulApiViewSet(CreateListViewSet):
+
+class TeacherApiViewSet(ListViewSet):
+    """Пользователи, являющиеся учителями. Доступ ко всем учителям имеет только администратор"""
+    queryset = Teacher.objects.all()
+    serializer_class = TeacherSerializer
+    permission_classes = [IsSchoolAuthorized, IsSchoolAdmin]
+    parser_classes= [MultiPartParser]
+
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    @swagger_auto_schema(parser_classes=[MultiPartParser], request_body=TeacherSerializer)
+    @action(detail=False, methods=["post"], serializer_class=TeacherSerializer, parser_classes=[MultiPartParser])
+    def create_teacher(self, request):
+        """Создать учителя на основе пользователя"""
+        serializers = TeacherSerializer(data=request.data)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
+class PupilApiViewSet(CreateListViewSet):
     """Пользователи, являющиеся школьниками. Доступ ко всем школьникам имеет только администратор. Преподаватель получает только свой класс"""
     queryset = Pupil.objects.all()
-    serializer_class = SchoolSerializer
+    serializer_class = PipulSerializer
     permission_classes=[IsSchoolAuthorized, IsSchoolAdmin]
 
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
     
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-    
+    @swagger_auto_schema(parser_classes=[MultiPartParser], request_body=PipulSerializer)
+    @action(detail=False, methods=["post"], serializer_class=PipulSerializer, 
+            permission_classes=[IsSchoolAuthorized, IsSchoolAdmin], parser_classes=[MultiPartParser])
+    def create_pupil(self, request):
+        """Создать учителя на основе пользователя"""
+        serializers = PipulSerializer(data=request.data)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
 class RulesApiViewSet(CreateListViewSet):
     """Правила. Пока непонятно, что это, но пусть работает"""
     queryset = Rules.objects.all()

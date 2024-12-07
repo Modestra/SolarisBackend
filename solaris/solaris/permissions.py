@@ -4,7 +4,7 @@ from solaris.models import Token
 class IsSchoolAdmin(BasePermission):
     """Проверяет, является ли пользователь школьным админом"""
     def has_permission(self, request, view):
-        return bool(request.user)
+        return bool(request.user.is_admin)
 
 class IsSchoolAuthorized(BasePermission):
     """Проверяет наличие пользовательского токена в системе"""
