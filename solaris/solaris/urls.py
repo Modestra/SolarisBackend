@@ -45,7 +45,7 @@ router.register(r'shop', ShopApiViewSet)
 router.register(r'competitions', CompetitionApiViewSet)
 router.register(r'files', CompetitionFilesApiViewSet)
 router.register(r'token', TokenApiView)
-router.register(r'pipul', PupilApiViewSet)
+router.register(r'pupil', PupilApiViewSet)
 router.register(r'teacher', TeacherApiViewSet)
 
 urlpatterns = [
@@ -54,5 +54,8 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('admin/', admin.site.urls),
     path('', include(router.urls)),
+    path("user/update_user/<user_id>", SchoolApiView.as_view({"put": "update_user"})),
+    path("teacher/update_teacher/<teacher_id>", TeacherApiViewSet.as_view({"put": "update_teacher"})),
+    path("pupil/update_pupil/<user_id>", TeacherApiViewSet.as_view({"put": "update_teacher"}))
 
 ]

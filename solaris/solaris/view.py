@@ -49,12 +49,13 @@ class TokenApiView(ListViewSet):
         """Получить список всех авторизованных пользователей"""
         return super().list(request, *args, **kwargs)
     
-    @action(detail=False, methods=["put"], permission_classes=[IsSchoolAuthorized])
+    @swagger_auto_schema(request_body=TokenSerializer, parser_classes=[MultiPartParser])
+    @action(detail=False, methods=["put"], permission_classes=[IsSchoolAuthorized], parser_classes=[MultiPartParser])
     def refresh_token(self, request, *args):
         """Обновить токен пользователя, если у токена прошёл срок"""
         serializers = TokenSerializer(data=request.data)
         if serializers.is_valid():
-            token = TokenSerializer.update(validated_data=request.data)
+            
             return Response({"token": serializers.data, "message": "Токен был обновлен"}, status=status.HTTP_200_OK)
         return Response({"message": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -129,17 +130,30 @@ class SchoolApiView(ListViewSet):
             return Response({"success": "Данные удалены"}, status=status.HTTP_204_NO_CONTENT)
         return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_400_BAD_REQUEST)
     
-    @swagger_auto_schema(parser_classes=[MultiPartParser], request_body=AdminUserSerializer)
-    @action(detail=False, methods=["post"], serializer_class=AdminUserSerializer, 
+    @swagger_auto_schema(parser_classes=[MultiPartParser], request_body=SchoolSerializer)
+    @action(detail=False, methods=["post"], serializer_class=SchoolSerializer, 
             permission_classes=[IsSchoolAdmin, IsSchoolAuthorized], parser_classes=[MultiPartParser])
     def create_user(self, request, *args, **kwargs):
         """Создает нового пользователя. Создавать пользователя может только администратор"""
-        serializers = AdminUserSerializer(data=request.data)
+        serializers = SchoolSerializer(data=request.data)
         if serializers.is_valid():
             serializers.save()
             user = SchoolUser.objects.get(username=serializers.data["username"])
             return Response(serializers.data, status=status.HTTP_201_CREATED)
         return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @swagger_auto_schema(parser_classes=[MultiPartParser], request_body=SchoolSerializer)
+    @action(detail=False, methods=["put"], parser_classes=[MultiPartParser], 
+            permission_classes=[IsSchoolAuthorized, IsSchoolAdmin], url_path="update_user/<user_id>")
+    def update_user(self, request, *args, **kwargs):
+        """Обновить данные пользователя"""
+        user_id = kwargs.get("user_id", None)
+        instance = SchoolUser.objects.get(user_id=user_id)
+        serializers = SchoolSerializer(data=request.data, instance=instance)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_206_PARTIAL_CONTENT)
+        return Response({"error": "Не удалось обновить данные"}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=False, methods=["post"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAuthorized])
     def get_token(self, request):
@@ -170,6 +184,20 @@ class TeacherApiViewSet(ListViewSet):
             serializers.save()
             return Response(serializers.data, status=status.HTTP_201_CREATED)
         return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @swagger_auto_schema(parser_classes=[MultiPartParser], request_body=TeacherSerializer)
+    @action(detail=False, methods=["put"], parser_classes=[MultiPartParser], 
+            permission_classes=[IsSchoolAuthorized, IsSchoolAdmin], url_path="update_teacher/<teacher_id>")
+    def update_teacher(self, request, *args, **kwargs):
+        """Обновить основную информацию школьника"""
+        teacher_id = kwargs.get("teacher_id", None)
+        instance = Teacher.objects.get(teacher_id=teacher_id)
+        serializers = TeacherSerializer(data=request.data, instance=instance)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
+
 class PupilApiViewSet(CreateListViewSet):
     """Пользователи, являющиеся школьниками. Доступ ко всем школьникам имеет только администратор. Преподаватель получает только свой класс"""
     queryset = Pupil.objects.all()
@@ -189,6 +217,19 @@ class PupilApiViewSet(CreateListViewSet):
             serializers.save()
             return Response(serializers.data, status=status.HTTP_201_CREATED)
         return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @swagger_auto_schema(parser_classes=[MultiPartParser], request_body=PipulSerializer)
+    @action(detail=False, methods=["put"], parser_classes=[MultiPartParser], serializer_class=PipulSerializer,
+            permission_classes=[IsSchoolAuthorized, IsSchoolAdmin], url_path="update_pupil/<user_id>")
+    def update_pupil(self, request, *args, **kwargs):
+        user_id = kwargs.get("user_id", None)
+        instance = Pupil.objects.get(user_id=user_id)
+        serializers = PipulSerializer(data=request.data, instance=instance)
+        if serializers.is_valid():
+            serializers.save()
+            return Response(serializers.data, status=status.HTTP_201_CREATED)
+        return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
+
 class RulesApiViewSet(CreateListViewSet):
     """Правила. Пока непонятно, что это, но пусть работает"""
     queryset = Rules.objects.all()

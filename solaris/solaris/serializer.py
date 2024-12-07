@@ -51,17 +51,6 @@ class UserIdSerializer(serializers.Serializer):
             raise serializers.ValidationError("Не удалось найти пользователя с данным id")
         return data
 
-class AdminUserSerializer(serializers.Serializer):
-    """Создание пользователей администратором внутри самого проекта. Не является суперпользователей"""
-    email = serializers.EmailField()
-    username = serializers.CharField(max_length=255)
-    password = serializers.CharField(max_length=255)
-    category = serializers.ChoiceField(choices=CategoryType.choices)
-
-    def create(self, validated_data):
-        #Не проверяется уникальность email
-        return SchoolUser.objects.create(**validated_data)
-
 class FeedbackSerializer(serializers.ModelSerializer):
     """Форма заполнения для отзыва и предложений"""
     class Meta:
@@ -80,6 +69,14 @@ class SchoolSerializer(serializers.Serializer):
     def create(self, validated_data):
         return SchoolUser.objects.create(**validated_data)
     
+    def update(self, instance, validated_data):
+        instance.email = validated_data.get("email", instance.email)
+        instance.username = validated_data.get("username", instance.username)
+        instance.password = validated_data.get("password", instance.password)
+        instance.category = validated_data.get("category", instance.category)
+        instance.save()
+        return instance
+    
 class PipulSerializer(serializers.Serializer):
     """Форма регистрации школьника"""
     name = serializers.CharField(max_length=100)
@@ -97,21 +94,40 @@ class PipulSerializer(serializers.Serializer):
     def create(self, validated_data):
         return Pupil.objects.create(**validated_data)
     
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get("name", instance.name)
+        instance.surname = validated_data.get("surname", instance.surname)
+        instance.fathername = validated_data.get("fathername", instance.fathername)
+        instance.class_name = validated_data.get("class_name", instance.class_name)
+        instance.teacher_id = validated_data.get("teacher_id", instance.teacher_id)
+        instance.save()
+        return instance
+
+    
 class TeacherSerializer(serializers.Serializer):
     """Форма регистрации учителя"""
     user_id = serializers.UUIDField(default=uuid.uuid4)
     teacher_id = serializers.UUIDField(read_only=True)
-    name = serializers.CharField(max_length=100)
-    surname = serializers.CharField(max_length=100)
-    fathername = serializers.CharField(max_length=100)
-    profeccion = serializers.ChoiceField(choices=ProfeccionChoices.choices)
-    competition_activities = serializers.CharField(max_length=25565, read_only=True)
+    name = serializers.CharField(max_length=100, required=False)
+    surname = serializers.CharField(max_length=100, required=False)
+    fathername = serializers.CharField(max_length=100, required=False)
+    profeccion = serializers.ChoiceField(choices=ProfeccionChoices.choices, required=False)
+    competition_activities = serializers.CharField(max_length=25565, read_only=True, required=False)
 
     def validate(self, attrs):
         return super().validate(attrs)
     
     def create(self, validated_data):
         return Teacher.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        instance.user_id = validated_data.get("user_id", instance.user_id)
+        instance.name = validated_data.get("name", instance.name)
+        instance.surname = validated_data.get("surname", instance.surname)
+        instance.fathername = validated_data.get("fathername", instance.fathername)
+        instance.profeccion = validated_data.get("profeccion", instance.profeccion)
+        instance.save()
+        return instance
 
 class RulesSerializer(serializers.ModelSerializer):
     """Форма каких-то правил"""
