@@ -195,7 +195,7 @@ class Competition(models.Model):
     rules = models.CharField(max_length=255, null=False, default="Нет")
 
 class CompetitionFiles(models.Model):
-    """Конкурсные файлы. """
+    """Конкурсные файлы"""
     id = models.AutoField(primary_key=True)
     competition_id = models.UUIDField()
     name = models.CharField(max_length=255)

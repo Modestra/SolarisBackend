@@ -12,6 +12,7 @@ from solaris.serializer import *
 from solaris.mixin import *
 from solaris.models import *
 from solaris.permissions import *
+from django.forms.models import model_to_dict
 from solaris.authentication import SolarisJWTAuthentification
 from solaris.encoder import MessageEncoder
 from drf_yasg.utils import swagger_auto_schema
@@ -32,9 +33,7 @@ class AuthApiViewSet(ListViewSet):
         if serializers.is_valid(raise_exception=True):
             user = SchoolUser.objects.get(username=serializers.data["username"])
             if SchoolUser.objects.filter(username=serializers.data["username"]).exists():
-                token = Token.objects.update(user_id=user.user_id, token=user.token, update_date=datetime.datetime.now())
-            token = Token.objects.create(user_id=user.user_id, token=user.token)
-            return Response({"user": serializers.data, "token": user.token}, status=status.HTTP_200_OK)
+                return Response({"user": serializers.data, "token": user.token}, status=status.HTTP_200_OK)
         return Response(serializers.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class TokenApiView(ListViewSet):
@@ -127,6 +126,8 @@ class SchoolApiView(ListViewSet):
         if serializers.is_valid():
             user = SchoolUser.objects.filter(user_id=serializers.data["user_id"]).delete()
             token = Token.objects.filter(user_id=serializers.data["user_id"]).delete()
+            pupil = Pupil.objects.filter(user_id=serializers.data["user_id"]).delete()
+            teacher = Teacher.objects.filter(user_id=serializers.data["user_id"]).delete()
             return Response({"success": "Данные удалены"}, status=status.HTTP_204_NO_CONTENT)
         return Response({"error": "Не удалось найти пользователя по данному user_id"}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -164,6 +165,12 @@ class SchoolApiView(ListViewSet):
             return Response(serializers.data, status=status.HTTP_202_ACCEPTED)
         return Response({"error": "Пользователь ранее был авторизован или его токен устарел"}, status=status.HTTP_400_BAD_REQUEST)
     
+    @action(detail=False, methods=["get"], serializer_class=SchoolSerializer)
+    def current_user(self, request):
+        """Получить корректного зарегестрированного пользователя"""
+        user = SchoolUser.objects.get(user_id=request.user.user_id)
+        
+    
 
 class TeacherApiViewSet(ListViewSet):
     """Пользователи, являющиеся учителями. Доступ ко всем учителям имеет только администратор"""
@@ -197,7 +204,13 @@ class TeacherApiViewSet(ListViewSet):
             serializers.save()
             return Response(serializers.data, status=status.HTTP_201_CREATED)
         return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    @action(detail=False, methods=["delete"], url_path="delete_teacher/<user_id>")
+    def delete_teacher(self, request, *args, **kwargs):
+        """Удаление пользователя в базе данных учителей. Не влияет на основную форму пользователя"""
+        user_id = kwargs.get("user_id", None)
+        teacher = Teacher.objects.filter(user_id=user_id).delete()
+        return Response({"success": "Учитель удалён"}, status=status.HTTP_204_NO_CONTENT)
 class PupilApiViewSet(CreateListViewSet):
     """Пользователи, являющиеся школьниками. Доступ ко всем школьникам имеет только администратор. Преподаватель получает только свой класс"""
     queryset = Pupil.objects.all()
@@ -229,6 +242,13 @@ class PupilApiViewSet(CreateListViewSet):
             serializers.save()
             return Response(serializers.data, status=status.HTTP_201_CREATED)
         return Response({"error": "Некорректная форма передачи данных"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=["delete"], url_path="delete_pupil/<user_id>")
+    def delete_pupil(self, request, *args, **kwargs):
+        """Удаляет школьника за базы данных школьников"""
+        user_id = kwargs.get("user_id", None)
+        pupil = Pupil.objects.filter(user_id=user_id).delete()
+        return Response({"success": "Школьник удалён"}, status=status.HTTP_204_NO_CONTENT)
 
 class RulesApiViewSet(CreateListViewSet):
     """Правила. Пока непонятно, что это, но пусть работает"""

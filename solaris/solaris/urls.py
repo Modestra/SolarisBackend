@@ -56,6 +56,8 @@ urlpatterns = [
     path('', include(router.urls)),
     path("user/update_user/<user_id>", SchoolApiView.as_view({"put": "update_user"})),
     path("teacher/update_teacher/<teacher_id>", TeacherApiViewSet.as_view({"put": "update_teacher"})),
-    path("pupil/update_pupil/<user_id>", TeacherApiViewSet.as_view({"put": "update_teacher"}))
+    path("teacher/delete_teacher/<user_id>", TeacherApiViewSet.as_view({"delete": "delete_teacher"})),
+    path("pupil/update_pupil/<user_id>", PupilApiViewSet.as_view({"put": "update_pupil"})),
+    path("pupil/delete_pupil/<user_id>", PupilApiViewSet.as_view({"delete": "delete_pupil"}))
 
 ]
