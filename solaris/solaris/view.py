@@ -12,6 +12,7 @@ from solaris.serializer import *
 from solaris.mixin import *
 from solaris.models import *
 from solaris.permissions import *
+from solaris.utils import *
 from django.forms.models import model_to_dict
 from solaris.authentication import SolarisJWTAuthentification
 from solaris.encoder import MessageEncoder
@@ -112,11 +113,11 @@ class SchoolApiView(ListViewSet):
         """Вывести список всех пользователей. Получить данные пользователей можно, если пользователь зарегестрирован и админ"""
         return super().list(request, *args, **kwargs)
     
-    @action(detail=False, methods=["get"], permission_classes=[IsSchoolAuthorized])
+    @action(detail=False, methods=["get"], serializer_class=SchoolSerializer)
     def current_user(self, request):
-        """Получить user_id авторизированного пользователя"""
+        """Получить корректного зарегестрированного пользователя"""
         user = SchoolUser.objects.get(user_id=request.user.user_id)
-        return Response({"user_id": user.user_id}, status=status.HTTP_200_OK)
+        return Response({"user_id": model_to_dict(user)})
     
     @swagger_auto_schema(request_body=TokenSerializer)
     @action(detail=False, methods=["delete"], serializer_class=TokenSerializer, permission_classes=[IsSchoolAdmin, IsSchoolAuthorized])
@@ -164,14 +165,7 @@ class SchoolApiView(ListViewSet):
             token = Token.objects.get(user_id=serializers.data["user_id"])
             return Response(serializers.data, status=status.HTTP_202_ACCEPTED)
         return Response({"error": "Пользователь ранее был авторизован или его токен устарел"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    @action(detail=False, methods=["get"], serializer_class=SchoolSerializer)
-    def current_user(self, request):
-        """Получить корректного зарегестрированного пользователя"""
-        user = SchoolUser.objects.get(user_id=request.user.user_id)
         
-    
-
 class TeacherApiViewSet(ListViewSet):
     """Пользователи, являющиеся учителями. Доступ ко всем учителям имеет только администратор"""
     queryset = Teacher.objects.all()
